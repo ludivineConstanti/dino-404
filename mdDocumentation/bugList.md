@@ -36,3 +36,9 @@
 #### Uncaught TypeError: THREE.OrbitControls is not a constructor at init (VM44 main.js:35)
 
 => OrbitControls is imported as such, not as THREE.OrbitControls, therefore, if we try to use properties that OrbitControls has, using the wrong name, it won't work because they do not exist.
+
+## Making the Dino
+
+### VM43 three.module.js:6647 THREE.Object3D.add: object not an instance of THREE.Object3D.
+
+=> solved by changing the name of what needs to be rendered in scene.add(function.nameObjProperty);
