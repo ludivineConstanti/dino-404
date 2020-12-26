@@ -11,12 +11,16 @@ import {
 // https://tympanus.net/codrops/2016/04/26/the-aviator-animating-basic-3d-scene-threejs/
 
 const Colors = {
-  red: 0xef4239,
-  blue: 0x4284f7,
-  green: 0x31ab52,
-  yellow: 0xffbd08,
-  white: 0xffffff,
+  red: new THREE.Color(0xef4239),
+  blue: new THREE.Color(0x4284f7),
+  green: new THREE.Color(0x31ab52),
+  yellow: new THREE.Color(0xffbd08),
+  white: new THREE.Color(0xffffff),
 };
+
+// Give more accurate colors
+Colors.red.convertSRGBToLinear();
+Colors.white.convertSRGBToLinear();
 
 window.addEventListener("load", init, false);
 
@@ -91,6 +95,21 @@ function createScene() {
     antialias: true,
   });
 
+  // Change the colors => suppose to make it more accurate
+  renderer.gammaFactor = 2.2;
+  renderer.outputEncoding = THREE.sRGBEncoding;
+
+  // Make the lights accurate
+  // Default is false for backward compatibility
+  // Useful mainly when we want to re-use real life light settings
+  // Can potentially be a problem if there's no environment 
+  // (real life gets a lot of reflected light from environments, not only light sources)
+  // => Need indirect lighting
+  // Ambient light is three.js solution to fake indirect lighting (too much calculations, otherwise)
+  // Need to adjust the lights to use it (currently is too dark)
+  // ref: https://discoverthreejs.com/book/first-steps/physically-based-rendering/
+  // renderer.physicallyCorrectLights = true;
+
   // Define the size of the renderer; in this case,
   // it will fill the entire screen
   renderer.setSize(WIDTH, HEIGHT);
@@ -120,12 +139,14 @@ function handleWindowResize() {
 function createLights() {
   // A directional light shines from a specific direction.
   // It acts like the sun, that means that all the rays produced are parallel.
+  // Directional lights (like all direct lights) are slow, should not use too many
   shadowLight = new THREE.DirectionalLight(0xffffff, 0.9);
 
-  // Set the direction of the light
-  shadowLight.position.set(150, 350, 350);
+  // Set the direction of the light;
+  shadowLight.position.set(-150, 100, 250);
 
   // Allow shadow casting
+  // Shadows are expensive, therefore, there's no need to allow it for every light
   shadowLight.castShadow = true;
 
   // define the visible area of the projected shadow
@@ -141,24 +162,31 @@ function createLights() {
   shadowLight.shadow.mapSize.width = 1024;
   shadowLight.shadow.mapSize.height = 1024;
 
+  // put light everywhere
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+  scene.add(ambientLight);
+
   // to activate the lights, just add them to the scene
   scene.add(shadowLight);
 }
 
 // Materials
+// The Mesh Phong Material can reflect the light, unlike the Mesh Lambert material
+// It's less accurate than Mesh Standard Material or Mesh Physical Material
+// but performance will be better
 const redMat = new THREE.MeshPhongMaterial({
   color: Colors.red,
-  transparent: true,
-  opacity: 1,
   shading: THREE.FlatShading,
 });
 
 const whiteMat = new THREE.MeshPhongMaterial({
   color: Colors.white,
-  transparent: true,
-  opacity: 1,
   shading: THREE.FlatShading,
 });
+
+// change from default shininess 30
+redMat.shininess = 50;
+whiteMat.shininess = 50;
 
 // First let's define an object :
 function Dino() {
@@ -357,7 +385,7 @@ function Dino() {
 
   tail.position.set(-12, -2.5, 0);
   // smaller number turns toward right
-  // 180° = PI = 3.14...
+  // 180° = PI = 3.14... can use Math.PI
   tail.rotation.set(0, 0, 1.35);
   body.add(tail);
 }
