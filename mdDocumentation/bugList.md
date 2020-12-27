@@ -42,3 +42,13 @@
 ### VM43 three.module.js:6647 THREE.Object3D.add: object not an instance of THREE.Object3D.
 
 => solved by changing the name of what needs to be rendered in scene.add(function.nameObjProperty);
+
+## Making floor
+
+#### Value doesn't behave as planned: (val) => const v = val || 200;
+=> When the value is equal to 0 => chooses 200 even if a value is defined
+=> Better to put like this: val = 200) => const v = val;
+
+#### Floor borders didn't match even if they are supposed to have the same values
+=> new values are generated every time a floor is created
+=> need to put the values in the global scope, or clone the 1st floor

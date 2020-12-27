@@ -10,8 +10,6 @@ let dino;
 
 function Dino() {
     this.mesh = new THREE.Object3D();
-    this.mesh.castShadow = true;
-    this.mesh.receiveShadow = true;
 
     // 1:X 2:Y 3:Z
     const headGeom = new THREE.BoxGeometry(30, 20, 20);
@@ -207,12 +205,18 @@ function Dino() {
     // 180° = PI = 3.14... can use Math.PI
     tail.rotation.set(0, 0, 1.35);
     body.add(tail);
+
+    this.mesh.traverse(e => {
+        e.castShadow = true;
+        e.receiveShadow = true;
+    });
 }
 
 const createDino = function () {
     // name of the instance = new instance of the function
     // the variable of the instance needs to be declared somewhere in the global scope
     dino = new Dino();
+    dino.mesh.position.x = -75;
     // Need to put name of the object (or of the "container") we want to render
     scene.add(dino.mesh);
 }

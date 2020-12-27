@@ -11,6 +11,8 @@ let scene,
     renderer,
     container;
 
+let shadowLight;
+
 const createScene = function () {
     // Get the width and the height of the screen,
     // use them to set up the aspect ratio of the camera
@@ -23,7 +25,7 @@ const createScene = function () {
 
     // fog helps with the transition for the end of the ground
     // color, near, far => depends on the camera
-    scene.fog = new THREE.Fog(0xffffff, 140, 500);
+    // scene.fog = new THREE.Fog(0xffffff, 140, 500);
 
     // Create the camera
     aspectRatio = WIDTH / HEIGHT;
@@ -94,6 +96,42 @@ function handleWindowResize() {
     camera.updateProjectionMatrix();
 }
 
+// LIGHTS **************************************************************************
+
+const createLights = function () {
+    // A directional light shines from a specific direction.
+    // It acts like the sun, that means that all the rays produced are parallel.
+    // Directional lights (like all direct lights) are slow, should not use too many
+    shadowLight = new THREE.DirectionalLight(0xffffff, 0.9);
+
+    // Set the direction of the light;
+    shadowLight.position.set(-150, 100, 250);
+
+    // Allow shadow casting
+    // Shadows are expensive, therefore, there's no need to allow it for every light
+    shadowLight.castShadow = true;
+
+    // define the visible area of the projected shadow
+    shadowLight.shadow.camera.left = -400;
+    shadowLight.shadow.camera.right = 400;
+    shadowLight.shadow.camera.top = 400;
+    shadowLight.shadow.camera.bottom = -400;
+    shadowLight.shadow.camera.near = 1;
+    shadowLight.shadow.camera.far = 1000;
+
+    // define the resolution of the shadow; the higher the better,
+    // but also the more expensive and less performant
+    shadowLight.shadow.mapSize.width = 1024;
+    shadowLight.shadow.mapSize.height = 1024;
+
+    // put light everywhere
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+    scene.add(ambientLight);
+
+    // to activate the lights, just add them to the scene
+    scene.add(shadowLight);
+}
+
 // MATERIALS ************************************************************************
 
 const Colors = {
@@ -125,7 +163,22 @@ const blueMat = new THREE.MeshPhongMaterial({
     shading: THREE.FlatShading,
 });
 
+const greenMat = new THREE.MeshPhongMaterial({
+    color: Colors.green,
+    shading: THREE.FlatShading,
+});
+
+const yellowMat = new THREE.MeshPhongMaterial({
+    color: Colors.yellow,
+    shading: THREE.FlatShading,
+});
+
 const whiteMat = new THREE.MeshPhongMaterial({
+    color: Colors.white,
+    shading: THREE.FlatShading,
+});
+
+const whiteMatFloor = new THREE.MeshPhongMaterial({
     color: Colors.white,
     shading: THREE.FlatShading,
 });
@@ -134,13 +187,23 @@ const whiteMat = new THREE.MeshPhongMaterial({
 redMat.shininess = 50;
 blueMat.shininess = 50;
 whiteMat.shininess = 50;
+whiteMatFloor.shininess = 50;
+
+whiteMatFloor.emissive = Colors.white;
+// Default is 1
+// Max value is also 1
+whiteMatFloor.emissiveIntensity = 0.25;
 
 export {
     createScene,
+    createLights,
     scene,
     camera,
     renderer,
     redMat,
     blueMat,
-    whiteMat
+    greenMat,
+    yellowMat,
+    whiteMat,
+    whiteMatFloor
 };

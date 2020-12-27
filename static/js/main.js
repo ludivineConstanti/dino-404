@@ -9,12 +9,15 @@ import {
 
 import {
   createScene,
+  createLights,
   scene,
   camera,
   renderer,
-  redMat,
+  blueMat,
+  greenMat,
+  yellowMat,
   whiteMat,
-  blueMat
+  whiteMatFloor
 } from "/js/scene.js";
 
 import {
@@ -23,12 +26,20 @@ import {
 
 // Basic set up for the scene is based on the tutorial from Karim Maaloul
 // https://tympanus.net/codrops/2016/04/26/the-aviator-animating-basic-3d-scene-threejs/
+// + some other elements of the code from codepens
+// https://codepen.io/Yakudoo
 
 window.addEventListener("load", init, false);
 
 let controls;
-let shadowLight;
-let sky;
+let stones;
+let visibleClouds = [];
+let invisibleClouds = [];
+let visibleFloor = [];
+let invisibleFloor = [];
+
+const limitCloudLeft = -500;
+const limitCloudRight = -limitCloudLeft;
 
 function init() {
   // set up the scene, the camera and the renderer
@@ -38,10 +49,11 @@ function init() {
   createLights();
 
   // add the objects
-  createSky();
-  createFloor();
-  //createDino();
+  fillFloor();
+  createDino();
   createCactus();
+  createStones();
+  fillSky();
 
   // start a loop that will update the objects' positions
   // and render the scene on each frame
@@ -52,79 +64,11 @@ function init() {
   controls.noZoom = true;
 }
 
-function createLights() {
-  // A directional light shines from a specific direction.
-  // It acts like the sun, that means that all the rays produced are parallel.
-  // Directional lights (like all direct lights) are slow, should not use too many
-  shadowLight = new THREE.DirectionalLight(0xffffff, 0.9);
-
-  // Set the direction of the light;
-  shadowLight.position.set(-150, 100, 250);
-
-  // Allow shadow casting
-  // Shadows are expensive, therefore, there's no need to allow it for every light
-  shadowLight.castShadow = true;
-
-  // define the visible area of the projected shadow
-  shadowLight.shadow.camera.left = -400;
-  shadowLight.shadow.camera.right = 400;
-  shadowLight.shadow.camera.top = 400;
-  shadowLight.shadow.camera.bottom = -400;
-  shadowLight.shadow.camera.near = 1;
-  shadowLight.shadow.camera.far = 1000;
-
-  // define the resolution of the shadow; the higher the better,
-  // but also the more expensive and less performant
-  shadowLight.shadow.mapSize.width = 1024;
-  shadowLight.shadow.mapSize.height = 1024;
-
-  // put light everywhere
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
-  scene.add(ambientLight);
-
-  // to activate the lights, just add them to the scene
-  scene.add(shadowLight);
-}
-
 // Objects creation *****************************************************
 
-// example on how to distort a plane
-// https://jsfiddle.net/h4oytk1a/1/
-
-function createFloor() {
-  // size, number of segments
-  const geomFloor = new THREE.PlaneBufferGeometry(300, 300, 10, 10);
-
-  const posAttribute = geomFloor.attributes.position;
-
-  for (let i = 0; i < posAttribute.count; i++) {
-    // access single vertex (x,y,z)
-    let x = posAttribute.getX(i);
-    let y = posAttribute.getY(i);
-    let z = posAttribute.getZ(i);
-
-    // modify data (in this case just the z coordinate)
-    x += Math.random() * 10;
-    // the plane is rotated => y = z
-    y += Math.random() * 10;
-    // the plane is rotated => z = y
-    z += Math.random() * 4;
-
-    // write data back to attribute
-    posAttribute.setXYZ(i, x, y, z);
-  }
-  const floor = new THREE.Mesh(geomFloor, whiteMat);
-  scene.add(floor);
-
-  floor.rotation.x = -Math.PI / 2;
-  floor.position.y = -45;
-  floor.receiveShadow = true;
-  scene.add(floor);
-}
-
-function Cloud() {
+function createCloud() {
   // Create an empty container that will hold the different parts of the cloud
-  this.mesh = new THREE.Object3D();
+  const cloud = new THREE.Object3D();
 
   // create a cube geometry;
   // this shape will be duplicated to create the cloud
@@ -157,38 +101,62 @@ function Cloud() {
     c.receiveShadow = true;
 
     // add the cube to the container we first created
-    this.mesh.add(c);
+    cloud.add(c);
+  }
+
+  return cloud;
+}
+
+function getCloud() {
+  if (invisibleClouds.length) {
+    return invisibleClouds.pop();
+  } else {
+    return createCloud();
   }
 }
 
-// Define a Sky Object
-function Sky() {
-  // Create an empty container
-  this.mesh = new THREE.Object3D();
+function putCloudInSky(posX) {
+  const cloud = getCloud();
+  cloud.position.y = 20 + Math.random() * 100;
+  cloud.position.x = posX || limitCloudRight;
 
-  // create the clouds
-  for (let i = 0; i < 5; i++) {
-    let c = new Cloud();
+  // for a better result, we position the clouds
+  // at random depths inside of the scene
+  cloud.position.z = -30 - Math.random() * 200;
 
-    c.mesh.position.y = 20 + Math.random() * 100;
-    c.mesh.position.x = -100 + Math.random() * 500;
+  // we also set a random scale for each cloud
+  const s = 1 + Math.random();
+  cloud.scale.set(s, s, s);
 
-    // for a better result, we position the clouds
-    // at random depths inside of the scene
-    c.mesh.position.z = -50 - Math.random() * 500;
+  visibleClouds.push(cloud);
+  // do not forget to add the mesh of each cloud in the scene
+  scene.add(cloud);
+}
 
-    // we also set a random scale for each cloud
-    const s = 1 + Math.random();
-    c.mesh.scale.set(s, s, s);
-
-    // do not forget to add the mesh of each cloud in the scene
-    this.mesh.add(c.mesh);
+function fillSky() {
+  for (let i = 0; i < 10; i++) {
+    // second value needs to be the double of second one
+    // - a => limit of x to the left
+    // + a => reset to 0
+    // + a => same limit as the left one, but to the right
+    const posX = limitCloudLeft + Math.random() * (limitCloudRight * 2);
+    putCloudInSky(posX)
   }
 }
 
-function createSky() {
-  sky = new Sky();
-  scene.add(sky.mesh);
+function updateCloud() {
+  for (let i = 0; i < visibleClouds.length; i++) {
+    const cloud = visibleClouds[i];
+    const z = cloud.position.z;
+    cloud.position.x -= 1;
+    // check if the particle is out of the field of view
+    if (cloud.position.x < limitCloudLeft) {
+      scene.remove(cloud);
+      // recycle the particle
+      invisibleClouds.push(visibleClouds.splice(i, 1)[0]);
+      i--;
+    }
+  }
 }
 
 function createCactus() {
@@ -235,20 +203,226 @@ function createCactus() {
     branch2.position.set(branch2X, branch2Y, 0);
     cactus.add(branch2);
   }
+
+  /*const branch3 = branch1.clone();
+  branch3.rotation.set(0, Math.PI / 2, 0);
+  cactus.add(branch3);*/
+
   const rotate = Math.random();
 
   if (rotate > 0.5) {
     cactus.rotation.set(0, Math.PI, 0);
   }
 
+  cactus.traverse(e => {
+    e.castShadow = true;
+    e.receiveShadow = true;
+  });
+
   scene.add(cactus);
+}
+
+function createFloor() {
+  // example on how to distort a plane
+  // https://jsfiddle.net/h4oytk1a/1/
+
+
+  // size, number of segments
+  const geomFloor = new THREE.PlaneBufferGeometry(400, 400, 10, 10);
+
+  //  1 //   0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   10
+  //  2 //  11,  12,  13,  14,  15,  16,  17,  18,  19,  20,  21
+  //  3 //  22,  23,  24,  25,  26,  27,  28,  29,  30,  31,  32
+  //  4 //  33,  34,  35,  36,  37,  38,  39,  40,  41,  42,  43
+  //  5 //  44,  45,  46,  47,  48,  49,  50,  51,  52,  53,  54
+  //  6 //  55,  56,  57,  58,  59,  60,  61,  62,  63,  64,  65
+  //  7 //  66,  67,  68,  69,  70,  71,  72,  73,  74,  75,  76
+  //  8 //  77,  78,  79,  80,  81,  82,  83,  84,  85,  86,  87
+  //  9 //  88,  89,  90,  91,  92,  93,  94,  95,  96,  97,  98
+  // 10 //  99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109,
+  // 11 // 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120
+
+  // plane 11 x 11 = 2 sides 11 values necessary
+
+  let arrX = [];
+  let arrY = [];
+  let arrZ = [];
+
+  for (let i = 0; i < 11; i++) {
+    if (i >= 5 && i <= 7) {
+      // modify data
+      arrX.push(Math.ceil(Math.random() * 20));
+      // the plane is rotated => y = z
+      arrY.push(Math.ceil(Math.random() * 20));
+      // the plane is rotated => z = y
+      // should not put a value too big
+      // otherwise, the feet of the Dino will look weird
+      arrZ.push(Math.ceil(Math.random() * 4));
+    } else {
+      arrX.push(Math.ceil(Math.random() * 20));
+      arrY.push(Math.ceil(Math.random() * 20));
+      arrZ.push(Math.ceil(Math.random() * 20));
+    }
+  }
+
+  const posAttribute = geomFloor.attributes.position;
+  let count = 0;
+
+  for (let i = 0; i < posAttribute.count; i++) {
+    // access single vertex (x,y,z)
+    let x = posAttribute.getX(i);
+    let y = posAttribute.getY(i);
+    let z = posAttribute.getZ(i);
+
+    // left side => multiple of 11 (width)
+    // right side => multiple of 11 when substracts-10
+    // need to use the same values for the left side and the right
+    // since we want to reuse the same ground various time
+    // otherwise, the connection at the border can not be seamless
+
+    // can only call the function createFloor once
+    // otherwise, the valueswill be generated again
+    // (except if we put them outside the function)
+    if (i % 11 === 0) {
+      x += arrX[count];
+      y += arrY[count];
+      z += arrZ[count];
+    } else if ((i - 10) % 11 === 0) {
+      x += arrX[count];
+      y += arrY[count];
+      z += arrZ[count];
+      count++;
+    }
+    // middle is 6 => leave margin => 5, 6, 7
+    // between 44 and 76
+    else if (i >= 44 && i <= 76) {
+      // modify data
+      x += Math.random() * 20;
+      // the plane is rotated => y = z
+      y += Math.random() * 20;
+      // the plane is rotated => z = y
+      // should not put a value too big
+      // otherwise, the feet of the Dino will look weird
+      z += Math.random() * 4;
+    } else {
+      x += Math.random() * 20;
+      // the plane is rotated => y = z
+      y += Math.random() * 20;
+      // the plane is rotated => z = y
+      // Don't need to put a small value
+      // is not in the way of the Dino
+      z += Math.random() * 20;
+    }
+    // write data back to attribute
+    posAttribute.setXYZ(i, x, y, z);
+  }
+
+  const floor = new THREE.Mesh(geomFloor, whiteMatFloor);
+  floor.receiveShadow = true;
+  return floor;
+}
+
+function getFloor() {
+  if (invisibleFloor.length) {
+    return invisibleFloor.pop();
+  } else {
+    return createFloor();
+  }
+}
+
+function putFloorInScene(posX = 600) {
+  let floor;
+  if (visibleFloor.length === 0) {
+    floor = getFloor();
+  } else {
+    floor = visibleFloor[0].clone();
+  }
+  floor.position.x = posX;
+  floor.position.y = -45;
+  floor.rotation.x = -Math.PI / 2;
+  visibleFloor.push(floor);
+  scene.add(floor);
+}
+
+function fillFloor() {
+  let posX = -400;
+  for (let i = 0; i < 3; i++) {
+    putFloorInScene(posX);
+    posX += 400;
+  }
+}
+
+function Stones() {
+  this.mesh = new THREE.Object3D();
+
+  const stoneScale = 20;
+  let stoneGeom = new THREE.BoxGeometry(stoneScale, stoneScale, stoneScale);
+
+  for (let i = 0; i < 10; i++) {
+    let mat = Math.random();
+
+    if (mat < 0.7) {
+      mat = yellowMat;
+    } else {
+      mat = greenMat;
+    }
+
+    // create the mesh by cloning the geometry
+    let stone = new THREE.Mesh(stoneGeom, mat);
+
+    const s = 0.2 + Math.random() * 0.6;
+    // put the cloud down half the size of the main block
+    // and up half the size of the random sized block
+    // blocks are therefore aligned on the bottom instead of centered
+
+    // set the position of each cube randomly
+    stone.position.x = -120 + Math.random() * 240;
+    // we want the small stones to go up and the big ones to be down
+    // => the bigger s is, the smaller the y position should be
+    stone.position.y = 5 - s * 5;
+
+    // Need to leave a bigger margin than 24 for the dino
+    // from 12 to -12 + half of the width of the stone
+    // => Need to divide stones in 2 groups => those in front of the Dino
+    // and those behind
+    const zPos = Math.random();
+    if (zPos < 0.7) {
+      // 12 => touches the dino, so choose a higher value
+      stone.position.z = -15 - (stoneScale * s) / 2 - Math.random() * 120;
+    } else {
+      stone.position.z = 15 + (stoneScale * s) / 2 + Math.random() * 120;
+    }
+    // set the size of the cube randomly
+    stone.scale.set(s, s, s);
+
+    // allow each cube to cast and to receive shadows
+    stone.castShadow = true;
+    stone.receiveShadow = true;
+
+    // add the cube to the container we first created
+    this.mesh.add(stone);
+  }
+}
+
+function createStones() {
+  stones = new Stones();
+  stones.mesh.position.y = -47;
+  scene.add(stones.mesh);
 }
 
 function loop() {
   // controls.update();
+
+  //updateCloud();
 
   // render the scene
   renderer.render(scene, camera);
   // call the loop function again
   requestAnimationFrame(loop);
 }
+
+/*setInterval(() => {
+  if (visibleClouds.length < 10) {
+    putCloudInSky();
+  }
+}, 1000);*/
