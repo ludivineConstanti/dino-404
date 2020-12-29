@@ -6,29 +6,38 @@ import {
     whiteMat
 } from "/js/scene.js";
 
+import {
+    tailRotation,
+    dinoSpeed
+} from "/js/main.js"
+
+// makes dino available to global scope
 let dino;
 
 function Dino() {
     this.mesh = new THREE.Object3D();
 
     // 1:X 2:Y 3:Z
-    const headGeom = new THREE.BoxGeometry(30, 20, 20);
+    // Always use BufferGeometry instead of Geometry, it’s faster.
+    // ref => https://discoverthreejs.com/tips-and-tricks/
+    const headGeom = new THREE.BoxBufferGeometry(30, 20, 20);
     // To create an object in Three.js, we have to create a mesh
     // which is a combination of a geometry and some material
-    const head = new THREE.Mesh(headGeom, redMat);
-    this.mesh.add(head);
+    this.head = new THREE.Mesh(headGeom, redMat);
+    this.mesh.add(this.head);
 
-    const eyeGeom = new THREE.BoxGeometry(5, 5, 5);
-    const eyeR = new THREE.Mesh(eyeGeom, whiteMat);
-    const eyeL = eyeR.clone();
+    const eyeGeom = new THREE.BoxBufferGeometry(5, 5, 5);
+    this.eyeR = new THREE.Mesh(eyeGeom, whiteMat);
+    this.eyeL = this.eyeR.clone();
     // 1:X 2:Y 3:Z
     // X => negative values to the left, positive values to the right
     // the added cube is by default in the middle
-    eyeR.position.set(-7.5, 2.5, 9);
-    eyeL.position.set(-7.5, 2.5, -9);
-    head.add(eyeR);
-    head.add(eyeL);
+    this.eyeR.position.set(-7.5, 2.5, 9);
+    this.eyeL.position.set(-7.5, 2.5, -9);
+    this.head.add(this.eyeR);
+    this.head.add(this.eyeL);
 
+    // Can not access the vertices if ues BufferGeometry
     const mouthGeom = new THREE.BoxGeometry(14, 3, 14);
 
     // Need to make reference to the geometry, to modify its vertices, not to the final result
@@ -42,10 +51,10 @@ function Dino() {
     mouthGeom.vertices[2].x -= 3;
     mouthGeom.vertices[3].x -= 3;
 
-    const mouth = new THREE.Mesh(mouthGeom, redMat);
+    this.mouth = new THREE.Mesh(mouthGeom, redMat);
     // Y => negative values to the bottom, positive values to the top
-    mouth.position.set(0, -11.5, 0);
-    head.add(mouth);
+    this.mouth.position.set(0, -11.5, 0);
+    this.head.add(this.mouth);
 
     // radius top, radius bottom, height, number of faces on the side, number of faces vertically
     const bodyGeom = new THREE.CylinderGeometry(7, 7, 28, 6, 2);
@@ -112,23 +121,23 @@ function Dino() {
     bodyGeom.vertices[16].z -= 2;
     bodyGeom.vertices[16].y += 4;
 
-    const body = new THREE.Mesh(bodyGeom, redMat);
-    body.position.set(-5, -24, 0);
-    this.mesh.add(body);
+    this.body = new THREE.Mesh(bodyGeom, redMat);
+    this.body.position.set(-5, -24, 0);
+    this.mesh.add(this.body);
 
-    const armGeom = new THREE.BoxGeometry(7, 3, 3);
-    const armR = new THREE.Mesh(armGeom, redMat);
-    armR.position.set(1, 8, 9.5);
-    body.add(armR);
+    const armGeom = new THREE.BoxBufferGeometry(7, 3, 3);
+    this.armR = new THREE.Mesh(armGeom, redMat);
+    this.armR.position.set(1, 8, 9.5);
+    this.body.add(this.armR);
 
-    const handGeom = new THREE.BoxGeometry(3, 3, 3);
-    const hand = new THREE.Mesh(handGeom, redMat);
-    hand.position.set(2, -1.5, 0);
-    armR.add(hand);
+    const handGeom = new THREE.BoxBufferGeometry(3, 3, 3);
+    this.hand = new THREE.Mesh(handGeom, redMat);
+    this.hand.position.set(2, -1.5, 0);
+    this.armR.add(this.hand);
 
-    const armL = armR.clone();
-    armL.applyMatrix(new THREE.Matrix4().makeScale(1, 1, -1));
-    body.add(armL);
+    this.armL = this.armR.clone();
+    this.armL.applyMatrix(new THREE.Matrix4().makeScale(1, 1, -1));
+    this.body.add(this.armL);
 
     // width, height, depth, width segments, height segments
     const legGeom = new THREE.BoxGeometry(13, 14, 8, 1, 2);
@@ -158,21 +167,25 @@ function Dino() {
     // Back Left
     legGeom.vertices[10].x += 2;
 
-    const legR = new THREE.Mesh(legGeom, redMat);
-    legR.position.set(0, -8, 10);
-    body.add(legR);
+    this.legR = new THREE.Mesh(legGeom, redMat);
+    this.legR.position.set(0, -8, 10);
+    this.body.add(this.legR);
 
-    const footGeom = new THREE.BoxGeometry(10, 3.5, 5);
-    const foot = new THREE.Mesh(footGeom, redMat);
-    foot.position.set(0.5, -8.5, -1);
-    legR.add(foot);
+    const footGeom = new THREE.BoxBufferGeometry(10, 3.5, 5);
+    this.foot = new THREE.Mesh(footGeom, redMat);
+    this.foot.position.set(0.5, -8.5, -1);
+    this.legR.add(this.foot);
 
-    const legL = legR.clone();
-    legL.applyMatrix(new THREE.Matrix4().makeScale(1, 1, -1));
-    body.add(legL);
+    this.legL = this.legR.clone();
+    this.legL.applyMatrix(new THREE.Matrix4().makeScale(1, 1, -1));
+    this.body.add(this.legL);
+
+    this.tail = new THREE.Object3D();
+    this.tail.position.set(-12, -2.5, 0);
+    this.tail.rotation.set(0, 0, Math.PI / 2);
+    this.body.add(this.tail);
 
     const tailGeom = new THREE.BoxGeometry(13, 12, 12);
-    const tail = new THREE.Mesh(tailGeom, redMat);
 
     // TOP
     // Front right
@@ -199,12 +212,22 @@ function Dino() {
     tailGeom.vertices[6].z += 1;
 
     //rotation -80
+    this.tail1 = new THREE.Mesh(tailGeom, redMat);
 
-    tail.position.set(-12, -2.5, 0);
     // smaller number turns toward right
     // 180° = PI = 3.14... can use Math.PI
-    tail.rotation.set(0, 0, 1.35);
-    body.add(tail);
+    this.tail.add(this.tail1);
+
+    this.tail2 = this.tail1.clone();
+    this.tail2.scale.set(0.7, 0.7, 0.7);
+    this.tail2.position.set(4, 5, 0);
+    this.tail2.rotation.set(0, 0, -Math.PI / 4);
+    this.tail1.add(this.tail2);
+
+    this.tail3 = this.tail2.clone();
+    this.tail2.scale.set(0.7, 0.7, 0.7);
+    //tail2.rotation.set(0, 0, Math.PI / 10);
+    this.tail2.add(this.tail3);
 
     this.mesh.traverse(e => {
         e.castShadow = true;
@@ -216,11 +239,61 @@ const createDino = function () {
     // name of the instance = new instance of the function
     // the variable of the instance needs to be declared somewhere in the global scope
     dino = new Dino();
-    dino.mesh.position.x = -75;
+    //dino.mesh.position.x = -75;
     // Need to put name of the object (or of the "container") we want to render
     scene.add(dino.mesh);
 }
 
+// ref => https://codepen.io/Yakudoo/pen/qXaNeN?editors=0010
+Dino.prototype.run = function () {
+    this.tail1.position.x = -Math.cos(dinoSpeed) * 1.2;
+    this.tail1.rotation.z = Math.cos(dinoSpeed) * 0.2;
+    this.tail2.rotation.z = (Math.cos(dinoSpeed) * 0.1) - Math.PI / 4;
+    this.tail3.rotation.z = (Math.cos(dinoSpeed) * 0.1) - Math.PI / 4;
+
+    this.legR.position.y = (Math.sin(dinoSpeed) * 2) - 7;
+    this.legR.position.y = Math.max(-9, this.legR.position.y);
+    this.legR.position.x = -Math.cos(dinoSpeed) * 2;
+
+    this.foot.rotation.z = Math.cos(dinoSpeed);
+
+    this.legL.position.y = (Math.sin(dinoSpeed + Math.PI) * 1.5) - 7;
+    this.legL.position.x = -Math.cos(dinoSpeed + Math.PI) * 0.8;
+
+    this.mesh.position.y = Math.sin(dinoSpeed * 2);
+
+    this.head.position.y = Math.sin(dinoSpeed) * 0.1;
+    this.head.rotation.z = -Math.cos(dinoSpeed + Math.PI) * 0.03;
+    this.mouth.rotation.z = -Math.cos(dinoSpeed + Math.PI) * 0.05;
+
+    //this.armR.rotation.y = Math.sin(dinoSpeed) * 0.1;
+    this.armR.rotation.z = Math.sin(dinoSpeed) * 0.3;
+
+    // Body rotated forward ****************************************************************************
+
+    this.mesh.rotation.z = -0.6;
+
+    this.head.rotation.z = 0.4;
+    //this.head.rotation.z = (Math.cos(dinoSpeed + Math.PI) * 0.1) + 0.4;
+    this.head.position.x = (Math.cos(dinoSpeed + Math.PI) * 0.7) + 0.3;
+    this.head.position.y = -(Math.sin(dinoSpeed + Math.PI)) + 1;
+
+    this.armR.position.x = 7;
+    this.armR.position.y = (Math.sin(dinoSpeed) * 0.6) + 7;
+    this.armR.rotation.z = Math.sin(dinoSpeed) * 0.3;
+
+    this.hand.rotation.z = Math.sin(dinoSpeed) * 0.5;
+
+    this.legR.rotation.z = 0.6;
+    //this.legR.rotation.z = Math.cos(dinoSpeed) + 0.6;
+
+    this.tail1.position.x = (-Math.cos(dinoSpeed) * 1.2) - 7;
+    this.tail1.rotation.z = (Math.cos(dinoSpeed) * 0.2) + 0.3;
+    this.tail2.rotation.z = (Math.cos(dinoSpeed) * 0.3) - Math.PI / 4;
+    this.tail3.rotation.z = (Math.cos(dinoSpeed) * 0.3) - Math.PI / 4;
+}
+
 export {
-    createDino
+    createDino,
+    dino
 };

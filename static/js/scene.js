@@ -25,7 +25,7 @@ const createScene = function () {
 
     // fog helps with the transition for the end of the ground
     // color, near, far => depends on the camera
-    // scene.fog = new THREE.Fog(0xffffff, 140, 500);
+    scene.fog = new THREE.Fog(0xffffff, 140, 500);
 
     // Create the camera
     aspectRatio = WIDTH / HEIGHT;
@@ -135,28 +135,29 @@ const createLights = function () {
 // MATERIALS ************************************************************************
 
 const Colors = {
-    red: new THREE.Color(0xef4239),
-    blue: new THREE.Color(0x4284f7),
-    green: new THREE.Color(0x31ab52),
-    yellow: new THREE.Color(0xffbd08),
-    white: new THREE.Color(0xffffff),
+    red: new THREE.Color(0xef4239).convertSRGBToLinear(),
+    blue: new THREE.Color(0x4284f7).convertSRGBToLinear(),
+    green: new THREE.Color(0x31ab52).convertSRGBToLinear(),
+    yellow: new THREE.Color(0xffbd08).convertSRGBToLinear(),
+    white: new THREE.Color(0xffffff).convertSRGBToLinear()
 };
 
-// Give more accurate colors
-Colors.red.convertSRGBToLinear();
-Colors.blue.convertSRGBToLinear();
-Colors.white.convertSRGBToLinear();
 
 // The Mesh Phong Material can reflect the light, unlike the Mesh Lambert material
 // It's less accurate than Mesh Standard Material or Mesh Physical Material
 // but performance will be better
 const redMat = new THREE.MeshPhongMaterial({
     color: Colors.red,
+    // change from default shininess 30
+    shininess: 50,
+    /*transparent: true,
+    opacity: .5,*/
     shading: THREE.FlatShading,
 });
 
 const blueMat = new THREE.MeshPhongMaterial({
     color: Colors.blue,
+    shininess: 50,
     // transparency => goog to see how cubes are intersecting
     /*transparent: true,
     opacity: .6,*/
@@ -165,34 +166,35 @@ const blueMat = new THREE.MeshPhongMaterial({
 
 const greenMat = new THREE.MeshPhongMaterial({
     color: Colors.green,
+    emissive: Colors.green,
+    emissiveIntensity: 0.1,
+    shininess: 100,
     shading: THREE.FlatShading,
 });
 
 const yellowMat = new THREE.MeshPhongMaterial({
     color: Colors.yellow,
+    emissive: Colors.yellow,
+    emissiveIntensity: 0.2,
+    shininess: 50,
     shading: THREE.FlatShading,
 });
 
 const whiteMat = new THREE.MeshPhongMaterial({
     color: Colors.white,
+    shininess: 50,
     shading: THREE.FlatShading,
 });
 
 const whiteMatFloor = new THREE.MeshPhongMaterial({
     color: Colors.white,
+    shininess: 50,
+    emissive: Colors.white,
+    // Default is 1
+    // Max value is also 1
+    emissiveIntensity: 0.25,
     shading: THREE.FlatShading,
 });
-
-// change from default shininess 30
-redMat.shininess = 50;
-blueMat.shininess = 50;
-whiteMat.shininess = 50;
-whiteMatFloor.shininess = 50;
-
-whiteMatFloor.emissive = Colors.white;
-// Default is 1
-// Max value is also 1
-whiteMatFloor.emissiveIntensity = 0.25;
 
 export {
     createScene,
