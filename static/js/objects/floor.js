@@ -48,6 +48,7 @@ function createFloor() {
     const stoneGreen = new THREE.Mesh(stoneGeom, greenMat);
     // container for the stones
     const stones = new THREE.Object3D();
+
     // declare stone outside of if scope (below), otherwise, can not access it
     let stone;
 

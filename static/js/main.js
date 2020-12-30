@@ -187,12 +187,11 @@ function loop() {
 
   tailRotation += increment;
 
-  dinoSpeed += 0.6;
+  dinoSpeed += 0.05;
 
 
   updateCloud();
   updateFloor();
-  //Dino.run();
   // render the scene
 
   // apply the method stocked in the Dino prototype

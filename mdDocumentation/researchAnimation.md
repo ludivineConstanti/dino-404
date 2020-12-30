@@ -67,6 +67,18 @@ Arms are actively helping with the movement, in the opposite direction from the 
 => Fix => can make the tail go up and down when it rotates  
  => As long as the basis of the tail is connected to the body at the right place, looks fine
 
+ => 2nd option, can change the origin of the object by translating it (way better, knowing how many objects need to have the origin of rotation changed)
+ The translation should be applied on the geometry, not on the final 3D object.
+ Can still use position.set() when we don't want to modify the origin of the geometry
+ ex => footGeom.applyMatrix(new THREE.Matrix4().makeTranslation(5, 0, 0));
+
+ To put the origin at the border, rather than the center, use half of the width (or height, or depth)
+
+ Translations and position.set adds up, so if want to modify something in translation, without affecting the final position, need to correct it with position.set()
+
+ Translation does not affect children.
+ => it's better to do it first, since position.set() does affect children, so need to take it into account to set their position (and need to modify position.set to correct the changes made with translate)
+
 ### Need to find the right speed => running fast, but if do it too much, looks like the dino is receiving an electroshock
 
 ### Need performance to be good, or the animation won't play smoothly / fast
