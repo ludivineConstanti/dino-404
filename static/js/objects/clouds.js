@@ -103,6 +103,9 @@ function updateCloud() {
             invisibleClouds.push(visibleClouds.splice(i, 1)[0]);
             i--;
         }
+        if (visibleClouds.length < 6) {
+            putCloudInSky();
+        }
     }
 }
 

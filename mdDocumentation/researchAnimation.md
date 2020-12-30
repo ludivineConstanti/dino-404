@@ -19,21 +19,17 @@ When the value reaches Math.PI x 2 => the angle restarts from 0
    => Problem => the body of the real T-rex is different (proportions + it doesn't stand straight).
 3. Can use humans as reference, since we stand straight.
 
+## Running animation
+
 ## Observations, T-rex running cycle
-
-### Legs
-
-Legs rotate to the front, before putting the foot down.
-
-### Feet
-
-The feet rotate during the running cycle, go toward the back when the leg is also toward the back, and toward the front before it comes in contact with the ground.
 
 ### Body
 
 After one of the feet reach the back, the body makes a small jump, leaving the ground, it comes back in contact with the other leg touching the front, then leave again when that leg reaches the back and push.
 
 cycle => impact, jump, floats while going down, impact....
+
+The body rotate, right and left, depending on the leg it's using as support.
 
 ### Arms
 
@@ -42,6 +38,14 @@ Arms go up and down
 ### Tail
 
 The movement propagates progressively to the extremity of the tail
+
+### Legs
+
+Legs rotate to the front, before putting the foot down.
+
+### Feet
+
+The feet rotate during the running cycle, go toward the back when the leg is also toward the back, and toward the front before it comes in contact with the ground.
 
 ## Observations, human running cycle
 
@@ -82,3 +86,27 @@ Arms are actively helping with the movement, in the opposite direction from the 
 ### Need to find the right speed => running fast, but if do it too much, looks like the dino is receiving an electroshock
 
 ### Need performance to be good, or the animation won't play smoothly / fast
+
+## Jumping animation
+
+![Muybridge running cycle](./refPictures/researchAnimation/muybridge_jumping_man.jpg)
+
+![Muybridge running cycle](./refPictures/researchAnimation/muybridge_jumping_man2.jpg)
+
+## Observations, human running cycle
+
+## Head
+
+The head is looking down.
+
+## Torso
+
+Torso goes down => is caught in between the legs going up and the arms.
+
+## Arms
+
+The arms go up, in the first part of the jump, and then go to the back of the body to help with its balance during the landing.
+
+## Legs
+
+Legs go to the front and fold, to not touch the obstacle / achieve a greater distance

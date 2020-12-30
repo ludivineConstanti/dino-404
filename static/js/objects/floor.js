@@ -188,7 +188,7 @@ function fillFloor() {
 function updateFloor() {
     for (let i = 0; i < visibleFloor.length; i++) {
         const floor = visibleFloor[i];
-        floor.position.x -= 1;
+        floor.position.x -= 7;
         // check if the particle is out of the field of view
         if (floor.position.x < limitFloorLeft) {
             scene.remove(floor);

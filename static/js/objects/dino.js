@@ -14,6 +14,9 @@ import {
 // makes dino available to global scope
 let dino;
 
+let jumpDuration = 0;
+let landed = false;
+
 // positions are a nightmare to update when need to change it in translate + set + the children 
 // + animation functions...
 // here, we can update everything at once
@@ -23,11 +26,17 @@ let dino;
 // (+ whatever value we wanted)
 // children = same as translation (+ translation value)
 
+// Body
+// the body's position is dependent on the feet
+// (cause it can't float)
+// so its center should be lower 
+const bodyYTranslate = 10;
+const bodyY = -24 - bodyYTranslate;
 // Head
-const headXTranslate = 7;
-const headYTranslate = 0;
-const headX = -headXTranslate;
-const headY = -headYTranslate;
+const headXTranslate = 5;
+const headYTranslate = 10;
+const headX = 4 - headXTranslate;
+const headY = 24 - headYTranslate + bodyYTranslate;
 // Head children
 const eyeRX = -7.5 + headXTranslate;
 const eyeRY = 2.5 + headYTranslate;
@@ -36,16 +45,9 @@ const eyeLY = eyeRY;
 const mouthXTranslate = 6;
 const mouthX = 0 - mouthXTranslate + headXTranslate;
 const mouthY = -11.5 + headYTranslate;
-
-// Body
-// the body's position is dependent on the feet
-// (cause it can't float)
-// so its center should be lower 
-const bodyYTranslate = 10;
-const bodyY = -24 - bodyYTranslate;
 // Arms
 const armXTranslate = 3.5;
-const armRX = -armXTranslate;
+const armRX = 2 - armXTranslate;
 const armRY = 8 + bodyYTranslate;
 // Arms children
 const handX = 2 + armXTranslate;
@@ -72,49 +74,6 @@ const tail2Y = 3 + tailYTranslate;
 
 function Dino() {
     this.mesh = new THREE.Object3D();
-
-    // 1:X 2:Y 3:Z
-    // Always use BufferGeometry instead of Geometry, it’s faster.
-    // ref => https://discoverthreejs.com/tips-and-tricks/
-    const headGeom = new THREE.BoxBufferGeometry(30, 20, 20);
-    // modify the arm's origin
-    headGeom.applyMatrix(new THREE.Matrix4().makeTranslation(headXTranslate, headYTranslate, 0));
-    // To create an object in Three.js, we have to create a mesh
-    // which is a combination of a geometry and some material
-    this.head = new THREE.Mesh(headGeom, redMat);
-    this.head.position.set(headX, headY, 0);
-    this.mesh.add(this.head);
-
-    const eyeGeom = new THREE.BoxBufferGeometry(5, 5, 5);
-    this.eyeR = new THREE.Mesh(eyeGeom, whiteMat);
-    this.eyeL = this.eyeR.clone();
-    // 1:X 2:Y 3:Z
-    // X => negative values to the left, positive values to the right
-    // the added cube is by default in the middle
-    this.eyeR.position.set(eyeRX, eyeRY, 9);
-    this.eyeL.position.set(eyeLX, eyeLY, -9);
-    this.head.add(this.eyeR);
-    this.head.add(this.eyeL);
-
-    // Can not access the vertices if ues BufferGeometry
-    const mouthGeom = new THREE.BoxGeometry(14, 3, 14);
-    mouthGeom.applyMatrix(new THREE.Matrix4().makeTranslation(mouthXTranslate, 0, 0));
-
-    // Need to make reference to the geometry, to modify its vertices, not to the final result
-    // Right side
-    mouthGeom.vertices[2].z -= 3;
-    mouthGeom.vertices[7].z -= 3;
-    // Left side
-    mouthGeom.vertices[3].z += 3;
-    mouthGeom.vertices[6].z += 3;
-    // Front
-    mouthGeom.vertices[2].x -= 3;
-    mouthGeom.vertices[3].x -= 3;
-
-    this.mouth = new THREE.Mesh(mouthGeom, redMat);
-    // Y => negative values to the bottom, positive values to the top
-    this.mouth.position.set(mouthX, mouthY, 0);
-    this.head.add(this.mouth);
 
     // radius top, radius bottom, height, number of faces on the side, number of faces vertically
     const bodyGeom = new THREE.CylinderGeometry(7, 7, 28, 6, 2);
@@ -245,7 +204,11 @@ function Dino() {
     this.legR.add(this.foot);
 
     this.legL = this.legR.clone();
-    this.legL.applyMatrix(new THREE.Matrix4().makeScale(1, 1, -1));
+    // modify the leg's center
+    // without it, the leg is not properly mirrored
+    // but it's not possible to tell, since the dino is not seen from this side
+    //this.legL.applyMatrix(new THREE.Matrix4().makeScale(1, 1, -1));
+    this.legL.position.set(legRX, legRY, -10);
     this.body.add(this.legL);
 
     this.tail = new THREE.Object3D();
@@ -298,6 +261,49 @@ function Dino() {
     this.tail3.scale.set(0.7, 0.7, 0.7);
     this.tail2.add(this.tail3);
 
+    // 1:X 2:Y 3:Z
+    // Always use BufferGeometry instead of Geometry, it’s faster.
+    // ref => https://discoverthreejs.com/tips-and-tricks/
+    const headGeom = new THREE.BoxBufferGeometry(30, 20, 20);
+    // modify the arm's origin
+    headGeom.applyMatrix(new THREE.Matrix4().makeTranslation(headXTranslate, headYTranslate, 0));
+    // To create an object in Three.js, we have to create a mesh
+    // which is a combination of a geometry and some material
+    this.head = new THREE.Mesh(headGeom, redMat);
+    this.head.position.set(headX, headY, 0);
+    this.body.add(this.head);
+
+    const eyeGeom = new THREE.BoxBufferGeometry(5, 5, 5);
+    this.eyeR = new THREE.Mesh(eyeGeom, whiteMat);
+    this.eyeL = this.eyeR.clone();
+    // 1:X 2:Y 3:Z
+    // X => negative values to the left, positive values to the right
+    // the added cube is by default in the middle
+    this.eyeR.position.set(eyeRX, eyeRY, 9);
+    this.eyeL.position.set(eyeLX, eyeLY, -9);
+    this.head.add(this.eyeR);
+    this.head.add(this.eyeL);
+
+    // Can not access the vertices if ues BufferGeometry
+    const mouthGeom = new THREE.BoxGeometry(14, 3, 14);
+    mouthGeom.applyMatrix(new THREE.Matrix4().makeTranslation(mouthXTranslate, 0, 0));
+
+    // Need to make reference to the geometry, to modify its vertices, not to the final result
+    // Right side
+    mouthGeom.vertices[2].z -= 3;
+    mouthGeom.vertices[7].z -= 3;
+    // Left side
+    mouthGeom.vertices[3].z += 3;
+    mouthGeom.vertices[6].z += 3;
+    // Front
+    mouthGeom.vertices[2].x -= 3;
+    mouthGeom.vertices[3].x -= 3;
+
+    this.mouth = new THREE.Mesh(mouthGeom, redMat);
+    // Y => negative values to the bottom, positive values to the top
+    this.mouth.position.set(mouthX, mouthY, 0);
+    this.head.add(this.mouth);
+
     this.mesh.traverse(e => {
         e.castShadow = true;
         e.receiveShadow = true;
@@ -308,7 +314,7 @@ const createDino = function () {
     // name of the instance = new instance of the function
     // the variable of the instance needs to be declared somewhere in the global scope
     dino = new Dino();
-    //dino.mesh.position.x = -75;
+    //dino.mesh.position.x = -120;
     // Need to put name of the object (or of the "container") we want to render
     scene.add(dino.mesh);
 }
@@ -332,60 +338,56 @@ Dino.prototype.run = function () {
     // turn opposite to the clockwise direction
     // need to use negative sin and cos if want it to turn in the other direction
 
-    //this.tail1.position.x = -Math.cos(dinoSpeed) * 1.2;
-    this.tail1.rotation.z = Math.cos(dinoSpeed) * 0.2;
-    this.tail2.rotation.z = (Math.cos(dinoSpeed) * 0.1) - Math.PI / 4;
-    this.tail3.rotation.z = (Math.cos(dinoSpeed) * 0.1) - Math.PI / 4;
+    this.body.rotation.z = Math.cos(dinoSpeed * 2) * 0.15 - 0.3;
+    this.body.rotation.y = Math.cos(dinoSpeed) * 0.2;
+
+    //this.head.position.y = Math.sin(dinoSpeed) * 0.1;
+    //this.head.rotation.z = -Math.cos(dinoSpeed + Math.PI) * 0.03;
+    this.head.rotation.z = Math.cos(dinoSpeed * 2) * 0.1;
+    this.mouth.rotation.z = -Math.cos(dinoSpeed * 2 + Math.PI) * 0.08;
+
+    this.armR.rotation.z = -Math.cos(dinoSpeed) * 0.5;
+
+    this.tail1.rotation.z = Math.cos(dinoSpeed * 2) * 0.2;
+    this.tail2.rotation.z = (Math.cos(dinoSpeed * 2) * 0.1) - Math.PI / 4;
+    this.tail3.rotation.z = (Math.cos(dinoSpeed * 2) * 0.1) - Math.PI / 4;
 
     this.legR.position.y = -(Math.sin(dinoSpeed) * 2) + legRY;
-    //this.legR.position.y = Math.max(-9, this.legR.position.y);
-    //this.legR.position.x = -Math.cos(dinoSpeed) * 2 + legRX;
     this.legR.rotation.z = Math.cos(dinoSpeed);
-
     this.foot.rotation.z = -Math.cos(dinoSpeed) * 0.5;
 
-    //this.body.rotation.z = Math.cos(dinoSpeed);
+    this.legL.position.y = -(Math.sin(dinoSpeed + Math.PI) * 2) + legRY;
+    this.legL.rotation.z = Math.cos(dinoSpeed + Math.PI);
+}
 
-    //this.legL.position.y = -(Math.sin(dinoSpeed + Math.PI) * 2) + legRY;
-    //this.legL.rotation.z = Math.cos(dinoSpeed + Math.PI);
+Dino.prototype.jump = function () {
+    landed = false;
+    if (this.mesh.position.y < 60) {
+        this.mesh.position.y += 6;
+    }
+    this.body.rotation.z = -Math.PI / 10;
+    if (this.legR.rotation.z < Math.PI / 2.5) {
+        this.legR.rotation.z += 0.4;
+    }
+    if (this.legL.rotation.z < Math.PI / 2.5) {
+        this.legL.rotation.z += 0.4;
+    }
+    jumpDuration++;
+}
 
-    this.head.position.y = Math.sin(dinoSpeed) * 0.1;
-    this.head.rotation.z = -Math.cos(dinoSpeed + Math.PI) * 0.03;
-    this.mouth.rotation.z = -Math.cos(dinoSpeed + Math.PI) * 0.05;
-
-    //this.armR.rotation.y = Math.sin(dinoSpeed) * 0.1;
-    this.armR.rotation.z = Math.sin(dinoSpeed) * 0.3;
-
-    this.mesh.position.y = Math.sin(dinoSpeed * 2);
-
-    // Body rotated forward ****************************************************************************
-    // X => Math.cos()
-    // Y => Math.sin()
-    /*this.mesh.rotation.z = -0.6;
-
-    this.head.rotation.z = 0.4;
-    this.head.rotation.z = (Math.cos(dinoSpeed + Math.PI) * 0.1) + 0.4;
-    //this.head.position.x = (Math.cos(dinoSpeed + Math.PI) * 0.7) + headX;
-    //this.head.position.y = -(Math.sin(dinoSpeed + Math.PI)) + headY;
-
-    this.armR.position.x = armRX + 3.5;
-    this.armR.position.y = (Math.sin(dinoSpeed) * 0.6) + 7;
-    this.armR.rotation.z = Math.sin(dinoSpeed) * 0.3;
-
-    //this.hand.rotation.z = Math.sin(dinoSpeed) * 0.5;
-
-    this.legR.rotation.z = 0.6;
-    this.legR.rotation.z = Math.cos(dinoSpeed) + 0.6;
-
-    
-
-    this.tail1.position.x = (-Math.cos(dinoSpeed) * 1.2) - 7;
-    this.tail1.rotation.z = (Math.cos(dinoSpeed) * 0.2) + 0.3;
-    this.tail2.rotation.z = (Math.cos(dinoSpeed) * 0.3) - Math.PI / 4;
-    this.tail3.rotation.z = (Math.cos(dinoSpeed) * 0.3) - Math.PI / 4;*/
+Dino.prototype.land = function () {
+    if (this.mesh.position.y > 0) {
+        this.mesh.position.y -= 3;
+        landed = false;
+    } else if (this.mesh.position.y === 0) {
+        landed = true;
+        jumpDuration = 0;
+    }
 }
 
 export {
     createDino,
-    dino
+    dino,
+    jumpDuration,
+    landed
 };

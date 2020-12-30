@@ -21,7 +21,9 @@ import {
 
 import {
   createDino,
-  dino
+  dino,
+  jumpDuration,
+  landed
 } from "/js/objects/dino.js";
 
 import {
@@ -44,6 +46,8 @@ import {
 
 let tailRotation = 1.3;
 let dinoSpeed = 0;
+let isJumping = false;
+let isLanding = false;
 
 // Basic set up for the scene is based on the tutorial from Karim Maaloul
 // https://tympanus.net/codrops/2016/04/26/the-aviator-animating-basic-3d-scene-threejs/
@@ -181,32 +185,38 @@ let increment = 0.02;
 
 function loop() {
   // controls.update();
-  if (tailRotation < 1.3 || tailRotation > 1.9) {
-    increment = -increment;
-  }
 
-  tailRotation += increment;
-
-  dinoSpeed += 0.05;
-
+  dinoSpeed += 0.3;
 
   updateCloud();
   updateFloor();
-  // render the scene
 
   // apply the method stocked in the Dino prototype
   // on the dino instance
-  dino.run();
+  if (landed) {
+    isLanding = false;
+  }
+  if (!isJumping && !isLanding) {
+    dino.run();
+  }
+  if (isJumping) {
+    dino.jump();
+  }
+  if (jumpDuration > 10 && !landed) {
+    isJumping = false;
+    isLanding = true;
+    dino.land();
+  }
+  window.addEventListener('keydown', e => {
+    if (e.key === "ArrowUp") {
+      isJumping = true;
+    }
+  });
+  // render the scene
   renderer.render(scene, camera);
   // call the loop function again
   requestAnimationFrame(loop);
 }
-
-/*setInterval(() => {
-  if (visibleClouds.length < 10) {
-    putCloudInSky();
-  }
-}, 1000);*/
 
 export {
   tailRotation,
