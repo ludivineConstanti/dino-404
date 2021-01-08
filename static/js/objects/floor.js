@@ -3,6 +3,7 @@ import * as THREE from "/js/three.js/three.module.js";
 import {
     scene,
     yellowMat,
+    blueMat,
     greenMat,
     whiteMatFloor
 } from "/js/scene.js";
@@ -14,6 +15,44 @@ let invisibleFloor = [];
 const limitFloorLeft = -650;
 const floorScale = 400;
 const numFloorInScene = 4;
+
+// No need for too much randomness, since will just clone it
+// can add the randomness later by scaling and rotating
+function createCactus() {
+    const thickness = 12;
+
+    // Always use BufferGeometry instead of Geometry, it’s faster.
+    // ref => https://discoverthreejs.com/tips-and-tricks/
+    const cactusGeom = new THREE.BoxBufferGeometry(12, 90, 12);
+    const cactus = new THREE.Mesh(cactusGeom, blueMat);
+
+    const thickness1 = 8;
+    const length1 = 15;
+    // substract half of the parent and half of the child to align on the border
+    const branch1X = -thickness / 2 - length1 / 2;
+
+    const branch1Geom = new THREE.BoxBufferGeometry(15, 8, 8);
+    const branch1 = new THREE.Mesh(branch1Geom, blueMat);
+    branch1.position.set(branch1X, 8, 0);
+    cactus.add(branch1);
+
+    const height1S = 15;
+    const branch1SX = -(length1 - thickness1) / 2;
+    const branch1SY = (height1S - thickness1) / 2;
+
+    const branch1SGeom = new THREE.BoxBufferGeometry(8, 15, 8);
+    const branch1S = new THREE.Mesh(branch1SGeom, blueMat);
+    branch1S.position.set(branch1SX, branch1SY, 0);
+    branch1.add(branch1S);
+
+    const branch2 = branch1.clone();
+    branch2.rotation.set(0, Math.PI, 0);
+    branch2.scale.set(0.8, 0.8, 0.8);
+    branch2.position.set(12, 25, 0);
+    cactus.add(branch2);
+
+    return cactus;
+}
 
 function createFloor() {
     // example on how to distort a plane
@@ -48,6 +87,7 @@ function createFloor() {
     const stoneGreen = new THREE.Mesh(stoneGeom, greenMat);
     // container for the stones
     const stones = new THREE.Object3D();
+    const cactusRow = new THREE.Object3D();
 
     // declare stone outside of if scope (below), otherwise, can not access it
     let stone;
@@ -71,6 +111,26 @@ function createFloor() {
 
     const posAttribute = geomFloor.attributes.position;
     let count = 0;
+
+    const cactus = createCactus();
+
+    // the plane is rotated => y = z
+    // the plane is rotated => z = y
+
+    const cactusNum = 3 + Math.ceil(Math.random() * 2);
+
+    for (let i = 0; i < cactusNum; i++) {
+        const r = Math.floor(Math.random() * 5);
+        const s = 0.3 + Math.random() * 0.6;
+        // cloning is better for performance
+        // than making a new one
+        const c = cactus.clone();
+        const d = Math.random() * 25;
+        c.scale.set(s, s, s);
+        c.position.set(i * 40 + d, 160, 20 + s * 13);
+        c.rotation.set(Math.PI / 2, r * Math.PI / 2, 0);
+        cactusRow.add(c);
+    }
 
     for (let i = 0; i < posAttribute.count; i++) {
         // access single vertex (x,y,z)
@@ -120,16 +180,17 @@ function createFloor() {
         // write data back to attribute
         posAttribute.setXYZ(i, x, y, z);
 
+        let s = 0.2 + Math.random() * 0.6;
         // constructing stones and floor at the same time
         // has the downside of making the repetitive floor more obvious
         // but solves the problem of the random height for the stones
         // floating above the ground, or being too deep in
         // + can animate and recycle them together
         const isThereAStone = Math.random();
+        const stoneFront = Math.random();
         const stoneColor = Math.random();
-        let s = 0.2 + Math.random() * 0.6;
 
-        if (isThereAStone < 0.2 && (i < 44 || i > 76)) {
+        if (isThereAStone < 0.175 && (i < 44 || (i > 76 && stoneFront < 0.4))) {
             if (stoneColor < 0.65) {
                 // Object creation in JavaScript is expensive
                 // Making a clone is often a better option, for performance
@@ -151,6 +212,7 @@ function createFloor() {
     // and since I think the lighting is not too bad, it's an easy fix
     const floor = new THREE.Mesh(geomFloor, whiteMatFloor);
     floor.add(stones);
+    floor.add(cactusRow);
     floor.receiveShadow = true;
     return floor;
 }
@@ -202,8 +264,5 @@ function updateFloor() {
 
 export {
     fillFloor,
-    updateFloor,
-    visibleFloor,
-    invisibleFloor,
-    putFloorInScene
+    updateFloor
 };

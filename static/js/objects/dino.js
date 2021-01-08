@@ -7,7 +7,6 @@ import {
 } from "/js/scene.js";
 
 import {
-    tailRotation,
     dinoSpeed
 } from "/js/main.js"
 
@@ -314,7 +313,7 @@ const createDino = function () {
     // name of the instance = new instance of the function
     // the variable of the instance needs to be declared somewhere in the global scope
     dino = new Dino();
-    //dino.mesh.position.x = -120;
+    dino.mesh.position.x = -120;
     // Need to put name of the object (or of the "container") we want to render
     scene.add(dino.mesh);
 }
@@ -363,23 +362,37 @@ Dino.prototype.run = function () {
 Dino.prototype.jump = function () {
     landed = false;
     if (this.mesh.position.y < 60) {
-        this.mesh.position.y += 6;
+        this.mesh.position.y += 12;
     }
     this.body.rotation.z = -Math.PI / 10;
     if (this.legR.rotation.z < Math.PI / 2.5) {
-        this.legR.rotation.z += 0.4;
+        this.legR.rotation.z += 0.6;
     }
     if (this.legL.rotation.z < Math.PI / 2.5) {
-        this.legL.rotation.z += 0.4;
+        this.legL.rotation.z += 0.6;
     }
     jumpDuration++;
 }
 
 Dino.prototype.land = function () {
+    if (this.legL.rotation.z > 0.4) {
+        this.legL.rotation.z -= 0.2;
+    }
+    if (this.legR.rotation.z > 0.4) {
+        this.legR.rotation.z -= 0.2;
+    }
+    if (this.armR.rotation.z > -Math.PI / 4) {
+        this.armR.rotation.z -= 0.1;
+    }
     if (this.mesh.position.y > 0) {
-        this.mesh.position.y -= 3;
+        this.mesh.position.y -= 10;
         landed = false;
-    } else if (this.mesh.position.y === 0) {
+    }
+    // makes sure that the Dino doesn't go below the ground
+    if (this.mesh.position.y < 0) {
+        this.mesh.position.y = Math.max(0, this.mesh.position.y);
+    }
+    if (this.mesh.position.y === 0) {
         landed = true;
         jumpDuration = 0;
     }

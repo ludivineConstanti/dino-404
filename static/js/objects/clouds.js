@@ -111,10 +111,5 @@ function updateCloud() {
 
 export {
     fillSky,
-    updateCloud,
-    putCloudInSky,
-    visibleClouds,
-    invisibleClouds,
-    limitCloudLeft,
-    limitCloudRight
+    updateCloud
 };

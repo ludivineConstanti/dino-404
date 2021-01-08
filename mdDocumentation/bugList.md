@@ -52,3 +52,14 @@
 #### Floor borders didn't match even if they are supposed to have the same values
 => new values are generated every time a floor is created
 => need to put the values in the global scope, or clone the 1st floor
+
+## Animating obstacles
+
+### Obstacles do not all move at the same speed
+=> used an array to loop over the obstacles, to create them and did not remove any element from it
+=> The reference to the obstacles was put more than once in the array of animated elements (by mistake)
+=> The animation was applied more than once every time we animate the loop
+=> had to suppress the element of the 1st array, to not add them more than once to the array being animated
+
+### Obstacles disappear to soon
+=> same reference problem (created one cube that was added as obstacle dummy => the same cube was added more than once to the same array, when removed it from the array to reuse it somewhere else, was "removed" aka teleported to the second place it was used in).

@@ -13,10 +13,6 @@ import {
   scene,
   camera,
   renderer,
-  blueMat,
-  greenMat,
-  yellowMat,
-  whiteMat,
 } from "/js/scene.js";
 
 import {
@@ -28,24 +24,22 @@ import {
 
 import {
   fillFloor,
-  updateFloor,
-  visibleFloor,
-  invisibleFloor,
-  putFloorInScene,
+  updateFloor
 } from "/js/objects/floor.js";
 
 import {
   fillSky,
-  updateCloud,
-  visibleClouds,
-  putCloudInSky,
-  invisibleClouds,
-  limitCloudLeft,
-  limitCloudRight,
+  updateCloud
 } from "/js/objects/clouds.js";
 
-let tailRotation = 1.3;
+import {
+  fillcactusArr,
+  updateObstacles,
+  putObstacleInScene
+} from "/js/objects/obstacles.js";
+
 let dinoSpeed = 0;
+let obstacleTimeTracker = 0;
 let isJumping = false;
 let isLanding = false;
 
@@ -57,10 +51,8 @@ let isLanding = false;
 window.addEventListener("load", init, false);
 
 let controls;
-let visibleCactus = [];
-let invisibleCactus = [];
 
-function init() {
+async function init() {
   // set up the scene, the camera and the renderer
   createScene();
 
@@ -70,9 +62,9 @@ function init() {
   // add the objects
   fillFloor();
   createDino();
-  createCactus();
   fillSky();
-  createCactusRow();
+  fillcactusArr();
+  putObstacleInScene();
 
   // start a loop that will update the objects' positions
   // and render the scene on each frame
@@ -83,135 +75,49 @@ function init() {
   controls.noZoom = true;
 }
 
-// Objects creation *****************************************************
-
-function createCactus() {
-  const thickness = 17 - Math.ceil(Math.random() * 7);
-  const height = 90 + Math.ceil(Math.random() * 20);
-
-  // Always use BufferGeometry instead of Geometry, it’s faster.
-  // ref => https://discoverthreejs.com/tips-and-tricks/
-  const cactusGeom = new THREE.BoxBufferGeometry(thickness, height, thickness);
-  const cactus = new THREE.Mesh(cactusGeom, blueMat);
-
-  const thickness1 = thickness - 2 - Math.ceil(Math.random() * 3);
-  const length1 = 15 + Math.ceil(Math.random() * 5);
-  // substract half of the parent and half of the child to align on the border
-  const branch1X = -thickness / 2 - length1 / 2;
-  const branch1Y = -10 + Math.ceil(Math.random() * 35);
-
-  const branch1Geom = new THREE.BoxBufferGeometry(
-    length1,
-    thickness1,
-    thickness1
-  );
-  const branch1 = new THREE.Mesh(branch1Geom, blueMat);
-  branch1.position.set(branch1X, branch1Y, 0);
-  cactus.add(branch1);
-
-  const height1S = 15 + Math.ceil(Math.random() * 5);
-  const branch1SX = -(length1 - thickness1) / 2;
-  const branch1SY = (height1S - thickness1) / 2;
-
-  const branch1SGeom = new THREE.BoxBufferGeometry(
-    thickness1,
-    height1S,
-    thickness1
-  );
-  const branch1S = new THREE.Mesh(branch1SGeom, blueMat);
-  branch1S.position.set(branch1SX, branch1SY, 0);
-  branch1.add(branch1S);
-
-  const twoBranches = Math.random();
-
-  if (twoBranches > 0.3) {
-    const branch2Y = Math.ceil(Math.random() * 30);
-
-    const branch2 = branch1.clone();
-    branch2.rotation.set(0, Math.PI, 0);
-
-    const s = 0.5 + Math.random() * 0.5;
-    branch2.scale.set(s, s, s);
-
-    const branch2X = (thickness1 * s + length1 * s) / 2;
-
-    branch2.position.set(branch2X, branch2Y, 0);
-    cactus.add(branch2);
-  }
-
-  const rotate = Math.random();
-
-  if (rotate > 0.5) {
-    cactus.rotation.set(0, Math.PI, 0);
-  }
-
-  cactus.traverse((e) => {
-    e.castShadow = true;
-    e.receiveShadow = true;
-  });
-
-  return cactus;
-}
-
-function getCactus() {
-  if (invisibleCactus.length) {
-    return invisibleCactus.pop();
-  } else {
-    return createCactus();
-  }
-}
-
-function createCactusRow() {
-  const cactusRow = new THREE.Object3D();
-
-  const cactusNum = 2 + Math.ceil(Math.random() * 3);
-  let x = 0;
-  for (let i = 0; i < cactusNum; i++) {
-    const s = 0.3 + Math.random() / 2;
-    const cactus = getCactus();
-
-    cactus.position.x += x;
-    cactus.position.y -= 20;
-    cactus.position.z = -170;
-    cactus.scale.set(s, s, s);
-    x += 30 + Math.random() * 20;
-    cactusRow.add(cactus);
-  }
-
-  scene.add(cactusRow);
-}
-
-let increment = 0.02;
-
 function loop() {
+  //console.log(dino.mesh.position.y);
   // controls.update();
+
+  //updateCloud();
+  //updateFloor();
+  updateObstacles();
 
   dinoSpeed += 0.3;
 
-  updateCloud();
-  updateFloor();
-
-  // apply the method stocked in the Dino prototype
-  // on the dino instance
   if (landed) {
     isLanding = false;
   }
+  // apply the method stocked in the Dino prototype
+  // on the dino instance
   if (!isJumping && !isLanding) {
     dino.run();
   }
-  if (isJumping) {
+  // can only jump after landing
+  // (otherwise, could just press the up key all the time,
+  // to avoid all obstacles)
+  if (isJumping && !isLanding) {
     dino.jump();
   }
-  if (jumpDuration > 10 && !landed) {
+  // The jump needs to be fast, otherwise,
+  // it doesn't seem very reactive to the player's action
+  if (jumpDuration > 8 && !landed) {
     isJumping = false;
     isLanding = true;
     dino.land();
   }
-  window.addEventListener('keydown', e => {
-    if (e.key === "ArrowUp") {
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowUp" || e.key === " ") {
       isJumping = true;
     }
   });
+
+  obstacleTimeTracker++;
+
+  if (obstacleTimeTracker % 100 == 0) {
+    putObstacleInScene();
+  }
+
   // render the scene
   renderer.render(scene, camera);
   // call the loop function again
@@ -219,6 +125,5 @@ function loop() {
 }
 
 export {
-  tailRotation,
   dinoSpeed
 };

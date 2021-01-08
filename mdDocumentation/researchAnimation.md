@@ -109,4 +109,4 @@ The arms go up, in the first part of the jump, and then go to the back of the bo
 
 ## Legs
 
-Legs go to the front and fold, to not touch the obstacle / achieve a greater distance
+Legs go to the front and fold, to not touch the obstacle / achieve a greater distance. They need to go back toward the ground for the landing.
