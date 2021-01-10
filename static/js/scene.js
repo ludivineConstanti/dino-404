@@ -30,6 +30,7 @@ const createScene = function () {
     // Create the camera
     aspectRatio = WIDTH / HEIGHT;
     fieldOfView = 60;
+    // can not put the near plane to 0
     nearPlane = 10;
     farPlane = 1000;
     camera = new THREE.PerspectiveCamera(
@@ -196,6 +197,32 @@ const whiteMatFloor = new THREE.MeshPhongMaterial({
     shading: THREE.FlatShading,
 });
 
+const multiMat = new THREE.MeshPhongMaterial({
+    vertexColors: true,
+    /*transparent: true,
+    opacity: .6,*/
+});
+
+function assignColor(color, geom) {
+    // ref => https://threejsfundamentals.org/threejs/lessons/threejs-optimize-lots-of-objects.html
+    // get the colors as an array of values from 0 to 255
+    const rgb = color.toArray().map(v => v * 255);
+
+    // make an array to store colors for each vertex
+    const numVerts = geom.getAttribute('position').count;
+    const itemSize = 3; // r, g, b
+    const colors = new Uint8Array(itemSize * numVerts);
+
+    // copy the color into the colors array for each vertex
+    colors.forEach((v, ndx) => {
+        colors[ndx] = rgb[ndx % 3];
+    });
+
+    const normalized = true;
+    const colorAttrib = new THREE.BufferAttribute(colors, itemSize, normalized);
+    return colorAttrib;
+}
+
 export {
     createScene,
     createLights,
@@ -207,5 +234,8 @@ export {
     greenMat,
     yellowMat,
     whiteMat,
-    whiteMatFloor
+    whiteMatFloor,
+    multiMat,
+    Colors,
+    assignColor
 };

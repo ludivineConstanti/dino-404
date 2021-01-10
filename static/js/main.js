@@ -79,8 +79,8 @@ function loop() {
   //console.log(dino.mesh.position.y);
   // controls.update();
 
-  //updateCloud();
-  //updateFloor();
+  updateCloud();
+  updateFloor();
   updateObstacles();
 
   dinoSpeed += 0.3;
@@ -101,7 +101,7 @@ function loop() {
   }
   // The jump needs to be fast, otherwise,
   // it doesn't seem very reactive to the player's action
-  if (jumpDuration > 8 && !landed) {
+  if (jumpDuration > 12 && !landed) {
     isJumping = false;
     isLanding = true;
     dino.land();
@@ -117,6 +117,9 @@ function loop() {
   if (obstacleTimeTracker % 100 == 0) {
     putObstacleInScene();
   }
+
+  console.log(renderer.info.render.calls);
+  console.log(renderer.info.render);
 
   // render the scene
   renderer.render(scene, camera);

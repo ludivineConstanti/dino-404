@@ -2,14 +2,16 @@ import * as THREE from "/js/three.js/three.module.js";
 
 import {
     scene,
-    whiteMat
+    whiteMat,
+    multiMat,
+    Colors,
+    assignColor
 } from "/js/scene.js";
 
 let visibleClouds = [];
 let invisibleClouds = [];
 const limitCloudLeft = -500;
 const limitCloudRight = -limitCloudLeft;
-
 
 function createCloud() {
     // Create an empty container that will hold the different parts of the cloud
@@ -21,7 +23,11 @@ function createCloud() {
 
     // Always use BufferGeometry instead of Geometry, it’s faster.
     // ref => https://discoverthreejs.com/tips-and-tricks/
-    let geomCloud = new THREE.BoxBufferGeometry(cloudScale, cloudScale, cloudScale);
+    let geomCloud = new THREE.BoxBufferGeometry(
+        cloudScale,
+        cloudScale,
+        cloudScale
+    );
 
     for (let i = 0; i < 3; i++) {
         // create the mesh by cloning the geometry

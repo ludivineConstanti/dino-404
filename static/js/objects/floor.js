@@ -5,61 +5,105 @@ import {
     yellowMat,
     blueMat,
     greenMat,
-    whiteMatFloor
+    whiteMatFloor,
+    multiMat,
+    Colors,
+    assignColor,
 } from "/js/scene.js";
 
-let visibleFloor = [];
-let invisibleFloor = [];
+import {
+    BufferGeometryUtils
+} from "/js/three.js/BufferGeometryUtils.js";
+
+const visibleFloor = [];
+const invisibleFloor = [];
+const geomArr = [];
 
 // settings are easier to tweak in one place
 const limitFloorLeft = -650;
 const floorScale = 400;
 const numFloorInScene = 4;
 
-// No need for too much randomness, since will just clone it
-// can add the randomness later by scaling and rotating
-function createCactus() {
-    const thickness = 12;
+function createCactus(posX) {
+
+    const height = 30 + Math.ceil(Math.random() * 70);
+    const thickness = height / 6;
+    const cactusY = height / 2;
 
     // Always use BufferGeometry instead of Geometry, it’s faster.
     // ref => https://discoverthreejs.com/tips-and-tricks/
-    const cactusGeom = new THREE.BoxBufferGeometry(12, 90, 12);
-    const cactus = new THREE.Mesh(cactusGeom, blueMat);
+    const cactusGeom = new THREE.BoxBufferGeometry(thickness, thickness, height);
+    cactusGeom.applyMatrix4(new THREE.Matrix4().makeTranslation(posX, 200, cactusY));
+    const cactusColor = assignColor(Colors.blue, cactusGeom);
+    cactusGeom.setAttribute("color", cactusColor);
+    geomArr.push(cactusGeom);
 
-    const thickness1 = 8;
-    const length1 = 15;
-    // substract half of the parent and half of the child to align on the border
-    const branch1X = -thickness / 2 - length1 / 2;
+    const isThereABranchR = Math.random();
 
-    const branch1Geom = new THREE.BoxBufferGeometry(15, 8, 8);
-    const branch1 = new THREE.Mesh(branch1Geom, blueMat);
-    branch1.position.set(branch1X, 8, 0);
-    cactus.add(branch1);
+    if (isThereABranchR < 0.5) {
+        const lengthR = height / 4 - Math.random() * 5;
+        const branchRX = -thickness / 2 - lengthR / 2 + posX;
+        const branchRY = height - thickness * 1.7 - Math.random() * (height / 2.7);
+        const thicknessR = thickness - 2;
 
-    const height1S = 15;
-    const branch1SX = -(length1 - thickness1) / 2;
-    const branch1SY = (height1S - thickness1) / 2;
+        const branchRGeom = new THREE.BoxBufferGeometry(lengthR, thicknessR, thicknessR);
+        branchRGeom.applyMatrix4(new THREE.Matrix4().makeTranslation(branchRX, 200, branchRY));
+        const branchRColor = assignColor(Colors.blue, branchRGeom);
+        branchRGeom.setAttribute("color", branchRColor);
+        geomArr.push(branchRGeom);
 
-    const branch1SGeom = new THREE.BoxBufferGeometry(8, 15, 8);
-    const branch1S = new THREE.Mesh(branch1SGeom, blueMat);
-    branch1S.position.set(branch1SX, branch1SY, 0);
-    branch1.add(branch1S);
+        const heightRS = lengthR * (0.8 + Math.random() / 2);
+        const branchRSX = branchRX - thicknessR;
+        const branchRSY = (branchRY + heightRS / 2) - thicknessR / 2;
 
-    const branch2 = branch1.clone();
-    branch2.rotation.set(0, Math.PI, 0);
-    branch2.scale.set(0.8, 0.8, 0.8);
-    branch2.position.set(12, 25, 0);
-    cactus.add(branch2);
+        const branchRSGeom = new THREE.BoxBufferGeometry(thicknessR, thicknessR, heightRS);
+        branchRSGeom.applyMatrix4(new THREE.Matrix4().makeTranslation(branchRSX, 200, branchRSY));
+        const branchRSColor = assignColor(Colors.blue, cactusGeom);
+        branchRSGeom.setAttribute("color", branchRSColor);
+        geomArr.push(branchRSGeom);
+    }
 
-    return cactus;
+    const isThereABranchL = Math.random();
+
+    if (isThereABranchL < 0.5) {
+        const thicknessL = thickness - (2 * (height / 30));
+        const lengthL = height / 4;
+        const branchLX = thickness / 2 + lengthL / 2 + posX;
+        const branchLY = height - thickness * 1.7 - Math.random() * (height / 2.7);
+
+        const branchLGeom = new THREE.BoxBufferGeometry(lengthL, thicknessL, thicknessL);
+        branchLGeom.applyMatrix4(new THREE.Matrix4().makeTranslation(branchLX, 200, branchLY));
+        const branchLColor = assignColor(Colors.blue, branchLGeom);
+        branchLGeom.setAttribute("color", branchLColor);
+        geomArr.push(branchLGeom);
+
+        const heightLS = lengthL * (0.8 + Math.random() / 2);
+        const branchLSX = branchLX + thicknessL;
+        const branchLSY = (branchLY + heightLS / 2) - thicknessL / 2;
+
+        const branchLSGeom = new THREE.BoxBufferGeometry(thicknessL, thicknessL, heightLS);
+        branchLSGeom.applyMatrix4(new THREE.Matrix4().makeTranslation(branchLSX, 200, branchLSY));
+        const branchLSColor = assignColor(Colors.blue, cactusGeom);
+        branchLSGeom.setAttribute("color", branchLSColor);
+        geomArr.push(branchLSGeom);
+    }
 }
 
 function createFloor() {
+    for (let i = 0; i < 5; i++) {
+        createCactus(i * 50);
+    }
+
     // example on how to distort a plane
     // https://jsfiddle.net/h4oytk1a/1/
 
     // size, number of segments
-    const geomFloor = new THREE.PlaneBufferGeometry(floorScale, floorScale, 10, 10);
+    const geomFloor = new THREE.PlaneBufferGeometry(
+        floorScale,
+        floorScale,
+        10,
+        10
+    );
 
     //  1 //   0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   10
     //  2 //  11,  12,  13,  14,  15,  16,  17,  18,  19,  20,  21
@@ -78,19 +122,6 @@ function createFloor() {
     let arrX = [];
     let arrY = [];
     let arrZ = [];
-
-    // Always use BufferGeometry instead of Geometry, it’s faster.
-    // ref => https://discoverthreejs.com/tips-and-tricks/
-    let stoneGeom = new THREE.BoxBufferGeometry(20, 20, 20);
-
-    const stoneYellow = new THREE.Mesh(stoneGeom, yellowMat);
-    const stoneGreen = new THREE.Mesh(stoneGeom, greenMat);
-    // container for the stones
-    const stones = new THREE.Object3D();
-    const cactusRow = new THREE.Object3D();
-
-    // declare stone outside of if scope (below), otherwise, can not access it
-    let stone;
 
     for (let i = 0; i < 11; i++) {
         if (i >= 5 && i <= 7) {
@@ -112,25 +143,8 @@ function createFloor() {
     const posAttribute = geomFloor.attributes.position;
     let count = 0;
 
-    const cactus = createCactus();
-
     // the plane is rotated => y = z
     // the plane is rotated => z = y
-
-    const cactusNum = 3 + Math.ceil(Math.random() * 2);
-
-    for (let i = 0; i < cactusNum; i++) {
-        const r = Math.floor(Math.random() * 5);
-        const s = 0.3 + Math.random() * 0.6;
-        // cloning is better for performance
-        // than making a new one
-        const c = cactus.clone();
-        const d = Math.random() * 25;
-        c.scale.set(s, s, s);
-        c.position.set(i * 40 + d, 160, 20 + s * 13);
-        c.rotation.set(Math.PI / 2, r * Math.PI / 2, 0);
-        cactusRow.add(c);
-    }
 
     for (let i = 0; i < posAttribute.count; i++) {
         // access single vertex (x,y,z)
@@ -180,7 +194,6 @@ function createFloor() {
         // write data back to attribute
         posAttribute.setXYZ(i, x, y, z);
 
-        let s = 0.2 + Math.random() * 0.6;
         // constructing stones and floor at the same time
         // has the downside of making the repetitive floor more obvious
         // but solves the problem of the random height for the stones
@@ -188,39 +201,58 @@ function createFloor() {
         // + can animate and recycle them together
         const isThereAStone = Math.random();
         const stoneFront = Math.random();
-        const stoneColor = Math.random();
+        const stoneSize = (0.2 + Math.random() * 0.6) * 20;
+        let stoneColor = Math.random();
 
-        if (isThereAStone < 0.175 && (i < 44 || (i > 76 && stoneFront < 0.4))) {
-            if (stoneColor < 0.65) {
-                // Object creation in JavaScript is expensive
-                // Making a clone is often a better option, for performance
-                stone = stoneYellow.clone();
-            } else {
-                stone = stoneGreen.clone();
-            }
-
-            stone.scale.set(s, s, s);
+        if (isThereAStone < 0.175 && (i < 44 || (i > 76 && stoneFront < 0.6))) {
+            // Always use BufferGeometry instead of Geometry, it’s faster.
+            // ref => https://discoverthreejs.com/tips-and-tricks/
+            const stoneGeom = new THREE.BoxBufferGeometry(
+                stoneSize,
+                stoneSize,
+                stoneSize
+            );
             // the plane is rotated => y = z
             // the plane is rotated => z = y
-            z -= s * 3;
-            stone.position.set(x, y, z);
-            stones.add(stone);
+            z -= stoneSize * 0.15;
+            console.log("position 1:", stoneGeom.getAttribute("position"));
+            stoneGeom.applyMatrix4(new THREE.Matrix4().makeTranslation(x, y, z));
+            console.log("position 2;", stoneGeom.getAttribute("position"));
+            if (stoneColor < 0.7) {
+                stoneColor = Colors.yellow;
+            } else {
+                stoneColor = Colors.green;
+            }
+
+            const colorAttrib = assignColor(stoneColor, stoneGeom);
+            stoneGeom.setAttribute("color", colorAttrib);
+
+            geomArr.push(stoneGeom);
         }
     }
+
+    const mergedGeometry = BufferGeometryUtils.mergeBufferGeometries(
+        geomArr,
+        false
+    );
+    console.log("Merged geometry:", mergedGeometry);
+    const mesh = new THREE.Mesh(mergedGeometry, multiMat);
 
     // I use a different material for the floor, since I find it too greyish
     // and since I think the lighting is not too bad, it's an easy fix
     const floor = new THREE.Mesh(geomFloor, whiteMatFloor);
-    floor.add(stones);
-    floor.add(cactusRow);
+
     floor.receiveShadow = true;
+    floor.add(mesh);
     return floor;
 }
 
 function getFloor() {
     if (invisibleFloor.length) {
+        console.log("invisible floor");
         return invisibleFloor.pop();
     } else {
+        console.log("create floor");
         return createFloor();
     }
 }

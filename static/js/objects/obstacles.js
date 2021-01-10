@@ -10,13 +10,15 @@ import {
 } from "/js/scene.js";
 
 let cactusArr = [];
-let visibleObstacles = [];
-let invisibleObstacles = [];
+let sCactusArr = [];
+let visibleObst = [];
+let visibleSObst = [];
+let invisibleObst = [];
+let invisibleSObst = [];
 const limitLeft = -400;
 const limitRight = -limitLeft;
 
 function fillcactusArr() {
-    console.log("fill cactus array");
 
     // 1st cactus ******************************************************
     const wholeCactus1 = new THREE.Object3D();
@@ -83,9 +85,16 @@ function fillcactusArr() {
     const flowerCactus1 = new THREE.Mesh(flowerCactus1Geom, redMat);
     flowerCactus1.position.set(0, -11, 0);
     wholeCactus1.add(flowerCactus1);
-    wholeCactus1.name = "cactus1";
 
     cactusArr.push(wholeCactus1);
+
+    const smallCactus1 = wholeCactus1.clone();
+    smallCactus1.scale.set(0.5, 0.5, 0.5);
+    smallCactus1.position.set(0, -22, 0);
+
+    smallCactus1.name = "small";
+
+    sCactusArr.push(smallCactus1);
 
     // 2nd cactus *******************************************************
 
@@ -128,8 +137,15 @@ function fillcactusArr() {
     flower4Cactus2.position.set(5, -35, -12);
     wholeCactus2.add(flower4Cactus2);
 
-    wholeCactus2.name = "cactus2";
     cactusArr.push(wholeCactus2);
+
+    const smallCactus2 = wholeCactus2.clone();
+    smallCactus2.scale.set(0.5, 0.5, 0.5);
+    smallCactus2.position.set(0, -22, 0);
+
+    smallCactus2.name = "small";
+
+    sCactusArr.push(smallCactus2);
 
     // 3rd cactus *****************************************************
 
@@ -151,8 +167,38 @@ function fillcactusArr() {
     cactus3Branch2.position.set(0, -12, 0);
     wholeCactus3.add(cactus3Branch2);
 
-    wholeCactus3.name = "cactus3";
     cactusArr.push(wholeCactus3);
+
+    const smallCactus3 = wholeCactus2.clone();
+    smallCactus3.scale.set(0.5, 0.5, 0.5);
+    smallCactus3.position.set(0, -22, 0);
+
+    smallCactus3.name = "small";
+
+    sCactusArr.push(smallCactus3);
+
+    // 4th cactus ******************************************************
+
+    const wholeCactus4 = new THREE.Object3D();
+
+    const cactus4Seg1 = cactus1.clone();
+    cactus4Seg1.scale.set(1, 1, 0.2);
+    wholeCactus4.add(cactus4Seg1);
+
+    const cactus4Seg2 = cactus4Seg1.clone();
+    cactus4Seg2.rotation.set(0, Math.PI / 3, 0);
+    wholeCactus4.add(cactus4Seg2);
+
+    const cactus4Seg3 = cactus4Seg1.clone();
+    cactus4Seg3.rotation.set(0, 2 * Math.PI / 3, 0);
+    wholeCactus4.add(cactus4Seg3);
+
+    const flowerCactus4 = new THREE.Mesh(flowerCactus1Geom, yellowMat);
+    flowerCactus4.scale.set(0.8, 0.8, 0.8);
+    flowerCactus4.position.set(0, -12, 0);
+    wholeCactus4.add(flowerCactus4);
+
+    cactusArr.push(wholeCactus4);
 
     /*cactus.traverse(e => {
           e.castShadow = true;
@@ -162,37 +208,51 @@ function fillcactusArr() {
     //return wholeCactus1;
 }
 
-function putObstacleInScene() {
+function getObstacle(firstArr, recycledArr, animatedArr, posX) {
     // We randomize the array beforehand
     // We'll recuperate the last element, but it's always a random one
     // since the elements are in a random order
-    cactusArr.sort(() => Math.random() - 0.5);
-    invisibleObstacles.sort(() => Math.random() - 0.5);
+    firstArr.sort(() => Math.random() - 0.5);
+    recycledArr.sort(() => Math.random() - 0.5);
     let cactus;
-    if (cactusArr.length) {
-        console.log("cactusArr");
-        cactus = cactusArr.pop();
+    if (firstArr.length) {
+        cactus = firstArr.pop();
     } else {
-        console.log("invisible obstacle", invisibleObstacles.length);
-        cactus = invisibleObstacles.pop();
+        cactus = recycledArr.pop();
     }
-    console.log(cactus);
-    cactus.position.x = limitRight;
 
-    visibleObstacles.push(cactus);
+    cactus.position.x = posX;
+    const rotation = Math.floor(Math.random() * 2);
+    cactus.rotation.set(0, Math.PI * rotation, 0);
+    animatedArr.push(cactus);
     scene.add(cactus);
 }
 
-function updateObstacles() {
+function putObstacleInScene() {
+    getObstacle(cactusArr, invisibleObst, visibleObst, limitRight);
+    let sCactusFront = Math.random();
+    if (sCactusFront < 0.25) {
+        getObstacle(sCactusArr, invisibleSObst, visibleSObst, limitRight - 25);
+    }
+    let sCactusBack = Math.random();
+    if (sCactusBack < 0.25) {
+        getObstacle(sCactusArr, invisibleSObst, visibleSObst, limitRight + 25);
+    }
+}
 
-    console.log("update obstacle");
-    for (let i = 0; i < visibleObstacles.length; i++) {
-        const cactus = visibleObstacles[i];
+function updateObstacles() {
+    animateObstacles(visibleSObst, invisibleSObst);
+    animateObstacles(visibleObst, invisibleObst);
+}
+
+function animateObstacles(animatedArr, recycledArr) {
+    for (let i = 0; i < animatedArr.length; i++) {
+        const cactus = animatedArr[i];
         cactus.position.x = cactus.position.x - 5;
         if (cactus.position.x < limitLeft) {
             scene.remove(cactus);
             // recycle the particle
-            invisibleObstacles.push(visibleObstacles.splice(i, 1)[0]);
+            recycledArr.push(animatedArr.splice(i, 1)[0]);
             // need to go back in the loop, since one element was removed
             i--;
         }
