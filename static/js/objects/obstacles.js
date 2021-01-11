@@ -7,7 +7,14 @@ import {
     yellowMat,
     greenMat,
     whiteMat,
+    multiMat,
+    Colors,
+    assignColor,
 } from "/js/scene.js";
+
+import {
+    BufferGeometryUtils
+} from "/js/three.js/BufferGeometryUtils.js";
 
 let cactusArr = [];
 let sCactusArr = [];
@@ -18,194 +25,175 @@ let invisibleSObst = [];
 const limitLeft = -400;
 const limitRight = -limitLeft;
 
+function modifyColor(modelArr1, color1, modelArr2, color2, pushInArray) {
+    const arr = [];
+    for (let i = 0; i < modelArr1.length; i++) {
+        const copy = modelArr1[i].clone();
+        if (color1 !== 0) {
+            const color = assignColor(color1, copy);
+            copy.setAttribute("color", color);
+        }
+        arr.push(copy);
+    }
+    for (let i = 0; i < modelArr2.length; i++) {
+        const copyFlower = modelArr2[i].clone();
+        if (color2 !== 0) {
+            const colorFlower = assignColor(color2, copyFlower);
+            copyFlower.setAttribute("color", colorFlower);
+        }
+        arr.push(copyFlower);
+    }
+
+    // Merging cactus
+    const mergedVersion = BufferGeometryUtils.mergeBufferGeometries(arr, false);
+    const result = new THREE.Mesh(mergedVersion, multiMat);
+    if (pushInArray) {
+        cactusArr.push(result);
+    }
+    return result;
+}
+
+function makeSmallCopy(model) {
+    const smallCopy = model.clone();
+    smallCopy.name = "small";
+    smallCopy.applyMatrix4(new THREE.Matrix4().makeTranslation(0, -41, 0));
+    smallCopy.applyMatrix4(new THREE.Matrix4().makeScale(0.5, 0.5, 0.5));
+    sCactusArr.push(smallCopy);
+}
+
 function fillcactusArr() {
 
-    // 1st cactus ******************************************************
-    const wholeCactus1 = new THREE.Object3D();
     // radius top, radius bottom, height, radial segments, height segments
-    const cactusGeom = new THREE.CylinderGeometry(10, 10, 30, 6, 2);
-    const cSNewWidth = 7;
-    const cSY = 6;
+    const cactusGeom = new THREE.CylinderBufferGeometry(10, 10, 30, 6, 2);
+    modifyRowCylinder(cactusGeom.attributes.position, 7, 6);
+    // will give blue as default color to all copies
+    const cactusColor = assignColor(Colors.blue, cactusGeom);
+    cactusGeom.setAttribute("color", cactusColor);
 
-    //front right
-    cactusGeom.vertices[7].x += cSNewWidth * 0.85;
-    cactusGeom.vertices[7].z += cSNewWidth * 0.5;
-    cactusGeom.vertices[7].y += cSY;
-    // front left
-    cactusGeom.vertices[8].x += cSNewWidth * 0.85;
-    cactusGeom.vertices[8].z -= cSNewWidth * 0.5;
-    cactusGeom.vertices[8].y += cSY;
-    // middle right
-    cactusGeom.vertices[6].z += cSNewWidth;
-    cactusGeom.vertices[6].y += cSY;
-    // middle left
-    cactusGeom.vertices[9].z -= cSNewWidth;
-    cactusGeom.vertices[9].y += cSY;
-    // back right
-    cactusGeom.vertices[11].x -= cSNewWidth * 0.85;
-    cactusGeom.vertices[11].z += cSNewWidth * 0.5;
-    cactusGeom.vertices[11].y += cSY;
-    // back left
-    cactusGeom.vertices[10].x -= cSNewWidth * 0.85;
-    cactusGeom.vertices[10].z -= cSNewWidth * 0.5;
-    cactusGeom.vertices[10].y += cSY;
+    // 1st cactus *** 1st color ***************************************************
+    const cactus1Arr = [];
+    const cactus1Geom = cactusGeom.clone();
+    cactus1Geom.applyMatrix4(new THREE.Matrix4().makeTranslation(0, -30, 0));
+    cactus1Arr.push(cactus1Geom);
 
-    const cactus1 = new THREE.Mesh(cactusGeom, blueMat);
-    cactus1.position.set(0, -30, 0);
-    wholeCactus1.add(cactus1);
+    // Adding a flower on top
+    const cactus1_F_Geom = new THREE.CylinderBufferGeometry(4, 5, 8, 6, 2);
+    modifyRowCylinder(cactus1_F_Geom.attributes.position, 4, 2);
+    cactus1_F_Geom.applyMatrix4(new THREE.Matrix4().makeTranslation(0, -11, 0));
+    const cactus1_F_Color = assignColor(Colors.red, cactus1_F_Geom);
+    cactus1_F_Geom.setAttribute("color", cactus1_F_Color);
+    cactus1Arr.push(cactus1_F_Geom);
 
-    // radius top, radius bottom, height, radial segments, height segments
-    const flowerCactus1Geom = new THREE.CylinderGeometry(4, 5, 8, 6, 2);
-    const fSNewWidth = 4;
-    const fSH = 2;
+    // Merging cactus
+    const cactus1Merged = BufferGeometryUtils.mergeBufferGeometries(cactus1Arr, false);
+    const cactus1_C1 = new THREE.Mesh(cactus1Merged, multiMat);
+    cactusArr.push(cactus1_C1);
 
-    //front right
-    flowerCactus1Geom.vertices[7].x += fSNewWidth * 0.85;
-    flowerCactus1Geom.vertices[7].z += fSNewWidth * 0.5;
-    flowerCactus1Geom.vertices[7].y += fSH;
-    // front left
-    flowerCactus1Geom.vertices[8].x += fSNewWidth * 0.85;
-    flowerCactus1Geom.vertices[8].z -= fSNewWidth * 0.5;
-    flowerCactus1Geom.vertices[8].y += fSH;
-    // middle right
-    flowerCactus1Geom.vertices[6].z += fSNewWidth;
-    flowerCactus1Geom.vertices[6].y += fSH;
-    // middle left
-    flowerCactus1Geom.vertices[9].z -= fSNewWidth;
-    flowerCactus1Geom.vertices[9].y += fSH;
-    // back right
-    flowerCactus1Geom.vertices[11].x -= fSNewWidth * 0.85;
-    flowerCactus1Geom.vertices[11].z += fSNewWidth * 0.5;
-    flowerCactus1Geom.vertices[11].y += fSH;
-    // back left
-    flowerCactus1Geom.vertices[10].x -= fSNewWidth * 0.85;
-    flowerCactus1Geom.vertices[10].z -= fSNewWidth * 0.5;
-    flowerCactus1Geom.vertices[10].y += fSH;
+    // Other colors
+    const cactus1_C2 = modifyColor([cactus1Geom], 0, [cactus1_F_Geom], Colors.yellow, true);
+    const cactus1_C3 = modifyColor([cactus1Geom], Colors.yellow, [cactus1_F_Geom], Colors.red, true);
 
-    const flowerCactus1 = new THREE.Mesh(flowerCactus1Geom, redMat);
-    flowerCactus1.position.set(0, -11, 0);
-    wholeCactus1.add(flowerCactus1);
+    // Small copies
+    makeSmallCopy(cactus1_C1);
+    makeSmallCopy(cactus1_C2);
+    makeSmallCopy(cactus1_C3);
 
-    cactusArr.push(wholeCactus1);
+    // 2nd cactus *** 1st color ****************************************************
 
-    const smallCactus1 = wholeCactus1.clone();
-    smallCactus1.scale.set(0.5, 0.5, 0.5);
-    smallCactus1.position.set(0, -22, 0);
+    /*const cactus2Arr = [];
+    const cactus2_F_Arr = [];
+    const cactus2Geom = cactusGeom.clone();
+    cactus2Geom.applyMatrix4(new THREE.Matrix4().makeScale(0.9, 0.7, 0.9));
+    cactus2Geom.applyMatrix4(new THREE.Matrix4().makeTranslation(0, -30, 0));
+    cactus2Arr.push(cactus2Geom);
 
-    smallCactus1.name = "small";
+    const cactus2_B_Geom = cactusGeom.clone();
+    cactus2_B_Geom.applyMatrix4(new THREE.Matrix4().makeScale(0.65, 0.6, 0.65));
+    cactus2_B_Geom.applyMatrix4(new THREE.Matrix4().makeTranslation(11, -15.5, 0));
+    cactus2_B_Geom.applyMatrix4(new THREE.Matrix4().makeRotationZ(-Math.PI / 5));
+    cactus2Arr.push(cactus2_B_Geom);
 
-    sCactusArr.push(smallCactus1);
+    // Merging cactus
+    const cactus2Merged = BufferGeometryUtils.mergeBufferGeometries(cactus2Arr, false);
+    const cactus2_C1 = new THREE.Mesh(cactus2Merged, multiMat);
 
-    // 2nd cactus *******************************************************
+    const cactus2_F1_Geom = new THREE.DodecahedronBufferGeometry(5);
+    cactus2_F1_Geom.applyMatrix4(new THREE.Matrix4().makeTranslation(-11, -26, 9));
+    const cactus2_F1_Color = assignColor(Colors.red, cactus2_F1_Geom);
+    cactus2_F1_Geom.setAttribute("color", cactus2_F1_Color);
+    cactus2_F_Arr.push(cactus2_F1_Geom);
 
-    const wholeCactus2 = new THREE.Object3D();
+    const cactus2_F2_Geom = cactus2_F1_Geom.clone();
+    cactus2_F2_Geom.applyMatrix4(new THREE.Matrix4().makeScale(0.5, 0.5, 0.5));
+    cactus2_F2_Geom.applyMatrix4(new THREE.Matrix4().makeTranslation(15, -7, 3));
+    cactus2_F_Arr.push(cactus2_F2_Geom);
 
-    const cactus2 = new THREE.Mesh(cactusGeom, greenMat);
-    cactus2.scale.set(1, 0.8, 1);
-    cactus2.position.set(0, -30, 0);
-    //scene.add(cactus);
-    wholeCactus2.add(cactus2);
+    const cactus2_F3_Geom = cactus2_F1_Geom.clone();
+    cactus2_F3_Geom.applyMatrix4(new THREE.Matrix4().makeScale(0.7, 0.7, 0.7));
+    cactus2_F3_Geom.applyMatrix4(new THREE.Matrix4().makeTranslation(4, 4, -13));
+    cactus2_F_Arr.push(cactus2_F3_Geom);
 
-    const cactus2Branch = cactus2.clone();
-    cactus2Branch.scale.set(0.6, 0.8, 0.6);
-    cactus2Branch.position.set(0, -15, 0);
-    cactus2Branch.rotation.set(0, 0, -Math.PI / 8);
-    wholeCactus2.add(cactus2Branch);
+    // Merging flowers
+    const cactus2_F_Merged = BufferGeometryUtils.mergeBufferGeometries(cactus2_F_Arr, false);
+    const cactus2_F_C1 = new THREE.Mesh(cactus2_F_Merged, multiMat);
 
-    // radius top, radius bottom, height, radial segments, height segments
-    // radius, detail (default is 0, if put higher value, make it more sphere like)
-    const flowerCactus2Geom = new THREE.DodecahedronGeometry(5);
+    // The geometry shape of the flower is incompatible, with the one of the cactus
+    // they need to be added separately
+    cactus2_C1.add(cactus2_F_C1);
+    cactusArr.push(cactus2_C1);
 
-    const flowerCactus2 = new THREE.Mesh(flowerCactus2Geom, yellowMat);
-    flowerCactus2.position.set(8, -6, 4);
-    // can't add directly to the cactus
-    // otherwise, the scale will affect it
-    wholeCactus2.add(flowerCactus2);
+    // Other colors
+    const cactus2_C2 = modifyColor([cactus2Geom, cactus2_B_Geom], Colors.yellow, [], 0, false);
+    cactus2_C2.add(cactus2_F_C1.clone());
+    cactusArr.push(cactus2_C2);
 
-    const flower2Cactus2 = flowerCactus2.clone();
-    flower2Cactus2.position.set(-7, -15, -5);
-    flower2Cactus2.scale.set(1.3, 1.3, 1.3);
-    wholeCactus2.add(flower2Cactus2);
-
-    const flower3Cactus2 = flowerCactus2.clone();
-    flower3Cactus2.position.set(-5, -25, 15);
-    flower3Cactus2.scale.set(0.7, 0.7, 0.7);
-    wholeCactus2.add(flower3Cactus2);
-
-    const flower4Cactus2 = flowerCactus2.clone();
-    flower4Cactus2.scale.set(0.6, 0.6, 0.6);
-    flower4Cactus2.position.set(5, -35, -12);
-    wholeCactus2.add(flower4Cactus2);
-
-    cactusArr.push(wholeCactus2);
-
-    const smallCactus2 = wholeCactus2.clone();
-    smallCactus2.scale.set(0.5, 0.5, 0.5);
-    smallCactus2.position.set(0, -22, 0);
-
-    smallCactus2.name = "small";
-
-    sCactusArr.push(smallCactus2);
+    // Small copies
+    makeSmallCopy(cactus2_C1);
+    makeSmallCopy(cactus2_C2);*/
 
     // 3rd cactus *****************************************************
 
-    const wholeCactus3 = new THREE.Object3D();
+    const cactus3Arr = [];
+    const cactus3Geom = cactusGeom.clone();
+    cactus3Geom.applyMatrix4(new THREE.Matrix4().makeScale(0.7, 0.9, 0.3));
+    cactus3Geom.applyMatrix4(new THREE.Matrix4().makeRotationZ(Math.PI / 8));
+    cactus3Geom.applyMatrix4(new THREE.Matrix4().makeTranslation(0, -35, 0));
+    cactus3Arr.push(cactus3Geom);
 
-    const cactus3 = cactus1.clone();
-    cactus3.scale.set(0.7, 0.9, 0.3);
-    cactus3.rotation.set(0, 0, Math.PI / 8);
-    cactus3.position.set(0, -35, 0);
-    wholeCactus3.add(cactus3);
-    const cactus3Branch1 = cactus1.clone();
-    cactus3Branch1.scale.set(0.5, 0.7, 0.2);
-    cactus3Branch1.rotation.set(0, 0, -Math.PI / 4);
-    cactus3Branch1.position.set(8, -21, 0);
-    wholeCactus3.add(cactus3Branch1);
-    const cactus3Branch2 = cactus1.clone();
-    cactus3Branch2.scale.set(0.4, 0.5, 0.2);
-    cactus3Branch2.rotation.set(0, 0, Math.PI / 4);
-    cactus3Branch2.position.set(0, -12, 0);
-    wholeCactus3.add(cactus3Branch2);
+    const cactus3_B1_Geom = cactusGeom.clone();
+    cactus3_B1_Geom.applyMatrix4(new THREE.Matrix4().makeScale(0.5, 0.7, 0.2));
+    cactus3_B1_Geom.applyMatrix4(new THREE.Matrix4().makeRotationZ(-Math.PI / 4));
+    cactus3_B1_Geom.applyMatrix4(new THREE.Matrix4().makeTranslation(8, -21, 0));
+    cactus3Arr.push(cactus3_B1_Geom);
 
-    cactusArr.push(wholeCactus3);
+    const cactus3_B2_Geom = cactusGeom.clone();
+    cactus3_B2_Geom.applyMatrix4(new THREE.Matrix4().makeScale(0.4, 0.5, 0.2));
+    cactus3_B2_Geom.applyMatrix4(new THREE.Matrix4().makeRotationZ(Math.PI / 4));
+    cactus3_B2_Geom.applyMatrix4(new THREE.Matrix4().makeTranslation(0, -12, 0));
+    cactus3Arr.push(cactus3_B2_Geom);
 
-    const smallCactus3 = wholeCactus2.clone();
-    smallCactus3.scale.set(0.5, 0.5, 0.5);
-    smallCactus3.position.set(0, -22, 0);
+    // Merging cactus
+    const cactus3Merged = BufferGeometryUtils.mergeBufferGeometries(cactus3Arr, false);
+    const cactus3_C1 = new THREE.Mesh(cactus3Merged, multiMat);
 
-    smallCactus3.name = "small";
+    cactusArr.push(cactus3_C1);
 
-    sCactusArr.push(smallCactus3);
+    // Other colors
+    const cactus3_C2 = modifyColor([cactus3Geom, cactus3_B1_Geom, cactus3_B2_Geom], Colors.yellow, [], 0, true);
+    const cactus3_C3 = modifyColor([cactus3Geom, cactus3_B1_Geom, cactus3_B2_Geom], Colors.red, [], 0, true);
+    const cactus3_C4 = modifyColor([cactus3Geom, cactus3_B1_Geom, cactus3_B2_Geom], Colors.green, [], 0, true);
 
-    // 4th cactus ******************************************************
-
-    const wholeCactus4 = new THREE.Object3D();
-
-    const cactus4Seg1 = cactus1.clone();
-    cactus4Seg1.scale.set(1, 1, 0.2);
-    wholeCactus4.add(cactus4Seg1);
-
-    const cactus4Seg2 = cactus4Seg1.clone();
-    cactus4Seg2.rotation.set(0, Math.PI / 3, 0);
-    wholeCactus4.add(cactus4Seg2);
-
-    const cactus4Seg3 = cactus4Seg1.clone();
-    cactus4Seg3.rotation.set(0, 2 * Math.PI / 3, 0);
-    wholeCactus4.add(cactus4Seg3);
-
-    const flowerCactus4 = new THREE.Mesh(flowerCactus1Geom, yellowMat);
-    flowerCactus4.scale.set(0.8, 0.8, 0.8);
-    flowerCactus4.position.set(0, -12, 0);
-    wholeCactus4.add(flowerCactus4);
-
-    cactusArr.push(wholeCactus4);
+    // Small copies
+    makeSmallCopy(cactus3_C1);
+    makeSmallCopy(cactus3_C2);
+    makeSmallCopy(cactus3_C3);
+    makeSmallCopy(cactus3_C4);
 
     /*cactus.traverse(e => {
           e.castShadow = true;
           e.receiveShadow = true;
       });*/
 
-    //return wholeCactus1;
 }
 
 function getObstacle(firstArr, recycledArr, animatedArr, posX) {
@@ -257,6 +245,45 @@ function animateObstacles(animatedArr, recycledArr) {
             i--;
         }
     }
+}
+
+function modifyRowCylinder(posAttribute, newWidth, posY) {
+    //front right
+    const xC8 = posAttribute.getX(8) + newWidth * 0.85;
+    const yC8 = posAttribute.getY(8) + posY;
+    const zC8 = posAttribute.getZ(8) + newWidth * 0.5
+    posAttribute.setXYZ(8, xC8, yC8, zC8);
+    // front left
+    const xC9 = posAttribute.getX(9) + newWidth * 0.85;
+    const yC9 = posAttribute.getY(9) + posY;
+    const zC9 = posAttribute.getZ(9) - newWidth * 0.5
+    posAttribute.setXYZ(9, xC9, yC9, zC9);
+
+    // 2 vertices need to be moved for the buffer geometry version
+    // otherwise, leaves a hole
+    // middle right
+    const yC7 = posAttribute.getY(7) + posY;
+    const zC7 = posAttribute.getZ(7) + newWidth;
+    posAttribute.setXYZ(7, posAttribute.getX(7), yC7, zC7);
+
+    const yC13 = posAttribute.getY(13) + posY;
+    const zC13 = posAttribute.getZ(13) + newWidth;
+    posAttribute.setXYZ(13, posAttribute.getX(13), yC13, zC13);
+
+    // middle left
+    const yC10 = posAttribute.getY(10) + posY;
+    const zC10 = posAttribute.getZ(10) - newWidth;
+    posAttribute.setXYZ(10, posAttribute.getX(10), yC10, zC10);
+    // back right
+    const xC12 = posAttribute.getX(12) - newWidth * 0.85;
+    const yC12 = posAttribute.getY(12) + posY;
+    const zC12 = posAttribute.getZ(12) + newWidth * 0.5;
+    posAttribute.setXYZ(12, xC12, yC12, zC12);
+    // back left
+    const xC11 = posAttribute.getX(11) - newWidth * 0.85;
+    const yC11 = posAttribute.getY(11) + posY;
+    const zC11 = posAttribute.getZ(11) - newWidth * 0.5;
+    posAttribute.setXYZ(11, xC11, yC11, zC11);
 }
 
 export {

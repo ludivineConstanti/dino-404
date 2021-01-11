@@ -8,63 +8,41 @@ import {
     assignColor
 } from "/js/scene.js";
 
+import {
+    BufferGeometryUtils
+} from "/js/three.js/BufferGeometryUtils.js";
+
 let visibleClouds = [];
 let invisibleClouds = [];
 const limitCloudLeft = -500;
 const limitCloudRight = -limitCloudLeft;
+let cloud;
 
 function createCloud() {
     // Create an empty container that will hold the different parts of the cloud
-    const cloud = new THREE.Object3D();
-
-    // create a cube geometry;
-    // this shape will be duplicated to create the cloud
-    const cloudScale = 20;
-
-    // Always use BufferGeometry instead of Geometry, it’s faster.
-    // ref => https://discoverthreejs.com/tips-and-tricks/
-    let geomCloud = new THREE.BoxBufferGeometry(
-        cloudScale,
-        cloudScale,
-        cloudScale
-    );
+    const cloudArr = [];
 
     for (let i = 0; i < 3; i++) {
-        // create the mesh by cloning the geometry
-        let c = new THREE.Mesh(geomCloud, whiteMat);
+        const cloudScale = i === 1 ? 20 : 11;
+        // Always use BufferGeometry instead of Geometry, it’s faster.
+        // ref => https://discoverthreejs.com/tips-and-tricks/
+        const geomCloud = new THREE.BoxBufferGeometry(cloudScale, cloudScale, cloudScale);
+        geomCloud.applyMatrix4(new THREE.Matrix4().makeTranslation(i * 14, i === 1 ? 0 : -4.5, -2.5 + Math.random() * 6));
 
-        const randomScale = 0.4 + Math.random() * 0.4;
-        // put the cloud down half the size of the main block
-        // and up half the size of the random sized block
-        // blocks are therefore aligned on the bottom instead of centered
-        const posY = -cloudScale / 2 + (randomScale * cloudScale) / 2;
-
-        // set the position of each cube randomly
-        c.position.x = i * 14;
-        c.position.y = i === 1 ? 0 : posY;
-        c.position.z = -2.5 + Math.random() * 6;
-
-        // set the size of the cube (at the extremity) randomly
-        // the one in the middle stays the same
-        var s = i === 1 ? 1 : randomScale;
-        c.scale.set(s, s, s);
-
-        // allow each cube to cast and to receive shadows
-        c.castShadow = true;
-        c.receiveShadow = true;
-
+        const colorCloud = assignColor(Colors.white, geomCloud);
+        geomCloud.setAttribute("color", colorCloud);
         // add the cube to the container we first created
-        cloud.add(c);
+        cloudArr.push(geomCloud);
     }
-
-    return cloud;
+    const mergedCloud = BufferGeometryUtils.mergeBufferGeometries(cloudArr, false);
+    cloud = new THREE.Mesh(mergedCloud, multiMat);
 }
 
 function getCloud() {
     if (invisibleClouds.length) {
         return invisibleClouds.pop();
     } else {
-        return createCloud();
+        return cloud.clone();
     }
 }
 
@@ -87,6 +65,7 @@ function putCloudInSky(posX) {
 }
 
 function fillSky() {
+    createCloud();
     for (let i = 0; i < 10; i++) {
         // second value needs to be the double of second one
         // - a => limit of x to the left
@@ -117,5 +96,6 @@ function updateCloud() {
 
 export {
     fillSky,
-    updateCloud
+    updateCloud,
+    createCloud
 };

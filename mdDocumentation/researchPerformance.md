@@ -3,6 +3,17 @@
 The performance is important for the animation, otherwise, the frame rate drops a lot.
 Easiest thing to do, is to reduce the size of the 3D scene (so that it takes less pixels on the screen) => can make reference to the original game, which is not full screen.
 
+Performance is based on:
+
+1. the amount of draw / frame
+2. the complexity and the size of the geometries
+3. the type of materials used
+4. the lights
+5. the antialias
+6. the amount of matrix
+
+[Ref =>](https://codeburst.io/improve-your-threejs-performances-with-buffergeometryutils-8f97c072c14b)
+
 ## Geometry
 
 1. Creating new objects is expensive, should avoid it, cloning or recycling them is better.
@@ -21,6 +32,8 @@ import {BufferGeometryUtils} from './resources/threejs/r122/examples/jsm/utils/B
 
 We can only use one color while using that method, because we're only creating one mesh, but we can fix that by using vertex colors, which adds a color per vertex.
 
+Note => merging geometry with BufferGeometryUtils only works on buffer geometry.
+
 [Ref =>](https://threejsfundamentals.org/threejs/lessons/threejs-optimize-lots-of-objects.html)
 
 ### => OBSERVATIONS (for the stones and the cactus that are added to the floor)
@@ -28,20 +41,24 @@ We can only use one color while using that method, because we're only creating o
 #### Performance with cloning objects
 
 FPS (full screen) => between 3.4 and 5.8  
-GPU memory => 7MB  
 calls => between 98 and 140  
 triangles => between 1950 and 2600
 
 #### Performance with merging objects
 
 FPS (full screen) => between 3.8 and 5.9  
-GPU memory => 7MB  
 calls => between 42 and 60  
 triangles => between 2350 and 2700
 
 ### => CONCLUSION
 
 Cloning objects reduces the geometry but augment the number of calls, seeing that the frame rate is slightly better in the version that merges objects, it seems to be the better approach. Merging objects also give the advantage of more freedom for the shape of those, since we can only tweak the properties (scale, rotation...) if we use cloning.
+
+#### Performance with merging cubes to make a cloud and then cloning it (using the merged version for creating the floor)
+
+FPS (full screen) => between 3.9 and 6.7   
+calls => between 30 and 37  
+triangles => between 2300 and 2700
 
 ## Shadows
 

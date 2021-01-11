@@ -29,7 +29,8 @@ import {
 
 import {
   fillSky,
-  updateCloud
+  updateCloud,
+  createCloud
 } from "/js/objects/clouds.js";
 
 import {
@@ -63,6 +64,7 @@ async function init() {
   fillFloor();
   createDino();
   fillSky();
+  //createCloud();
   fillcactusArr();
   putObstacleInScene();
 

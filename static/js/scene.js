@@ -32,7 +32,7 @@ const createScene = function () {
     fieldOfView = 60;
     // can not put the near plane to 0
     nearPlane = 10;
-    farPlane = 1000;
+    farPlane = 400;
     camera = new THREE.PerspectiveCamera(
         fieldOfView,
         aspectRatio,
@@ -115,10 +115,10 @@ const createLights = function () {
     // define the visible area of the projected shadow
     shadowLight.shadow.camera.left = -400;
     shadowLight.shadow.camera.right = 400;
-    shadowLight.shadow.camera.top = 400;
+    shadowLight.shadow.camera.top = 200;
     shadowLight.shadow.camera.bottom = -400;
-    shadowLight.shadow.camera.near = 1;
-    shadowLight.shadow.camera.far = 1000;
+    shadowLight.shadow.camera.near = 150;
+    shadowLight.shadow.camera.far = 300;
 
     // define the resolution of the shadow; the higher the better,
     // but also the more expensive and less performant
@@ -201,6 +201,7 @@ const multiMat = new THREE.MeshPhongMaterial({
     vertexColors: true,
     /*transparent: true,
     opacity: .6,*/
+    shading: THREE.FlatShading,
 });
 
 function assignColor(color, geom) {

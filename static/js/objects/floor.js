@@ -44,7 +44,7 @@ function createCactus(posX) {
         const lengthR = height / 4 - Math.random() * 5;
         const branchRX = -thickness / 2 - lengthR / 2 + posX;
         const branchRY = height - thickness * 1.7 - Math.random() * (height / 2.7);
-        const thicknessR = thickness - 2;
+        const thicknessR = thickness - 3 - Math.random() * 3;
 
         const branchRGeom = new THREE.BoxBufferGeometry(lengthR, thicknessR, thicknessR);
         branchRGeom.applyMatrix4(new THREE.Matrix4().makeTranslation(branchRX, 200, branchRY));
@@ -65,8 +65,10 @@ function createCactus(posX) {
 
     const isThereABranchL = Math.random();
 
-    if (isThereABranchL < 0.5) {
-        const thicknessL = thickness - (2 * (height / 30));
+    // if there is no branch on the right, make a branch on the left
+    // second value is probability for 2 branches at the same time
+    if (isThereABranchR > 0.5 || isThereABranchL < 0.5) {
+        const thicknessL = thickness - 3 - Math.random() * 3;
         const lengthL = height / 4;
         const branchLX = thickness / 2 + lengthL / 2 + posX;
         const branchLY = height - thickness * 1.7 - Math.random() * (height / 2.7);
@@ -90,8 +92,9 @@ function createCactus(posX) {
 }
 
 function createFloor() {
-    for (let i = 0; i < 5; i++) {
-        createCactus(i * 50);
+    for (let i = 0; i < 4; i++) {
+        const d = Math.random() * 30;
+        createCactus(i * 70 + d);
     }
 
     // example on how to distort a plane
@@ -123,6 +126,9 @@ function createFloor() {
     let arrY = [];
     let arrZ = [];
 
+    // make 3 arrays with pre stocked values for the border of the plane
+    // so that the border at the left and the right have the same coordinates
+    // and they align when we clone them and put next to each other
     for (let i = 0; i < 11; i++) {
         if (i >= 5 && i <= 7) {
             // modify data
@@ -132,6 +138,7 @@ function createFloor() {
             // the plane is rotated => z = y
             // should not put a value too big
             // otherwise, the feet of the Dino will look weird
+            // going into the ground
             arrZ.push(Math.ceil(Math.random() * 4));
         } else {
             arrX.push(Math.ceil(Math.random() * 20));
@@ -231,11 +238,7 @@ function createFloor() {
         }
     }
 
-    const mergedGeometry = BufferGeometryUtils.mergeBufferGeometries(
-        geomArr,
-        false
-    );
-    console.log("Merged geometry:", mergedGeometry);
+    const mergedGeometry = BufferGeometryUtils.mergeBufferGeometries(geomArr, false);
     const mesh = new THREE.Mesh(mergedGeometry, multiMat);
 
     // I use a different material for the floor, since I find it too greyish
