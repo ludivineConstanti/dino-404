@@ -1,6 +1,6 @@
 # Bug List 😵
 
-## ⛔ 1st try without server
+## 1st try without server ⛔
 
 ### ⚠️ OrbitControls.js:1 Uncaught SyntaxError: Cannot use import statement outside a module 
 
@@ -15,7 +15,7 @@
 
 - [3 ways to fix the CORS error](https://medium.com/@dtkatz/3-ways-to-fix-the-cors-error-and-how-access-control-allow-origin-works-d97d55946d9)
 
-## 🚫 2nd try with a server
+## 2nd try with a server 🚫
 
 ### ⚠️ Cannot get "/" 
 
@@ -42,13 +42,13 @@
 ❌ If we try to use properties that OrbitControls has, using the wrong name, it won't work because they do not exist.  
 ✔️ Just need to use the right name
 
-## 🦕 Making the Dino
+## Making the Dino 🦕
 
 ### ⚠️ VM43 three.module.js:6647 THREE.Object3D.add: object not an instance of THREE.Object3D. 
 
 ✔️ Solved by changing the name of what needs to be rendered in scene.add(function.nameObjProperty);
 
-## 🔨 Making floor
+## Making floor 🔨
 
 #### ⚠️ Value doesn't behave as planned: (val) => const v = val || 200; 
 
@@ -60,7 +60,7 @@
 ❌ New values are generated every time a floor is created  
 ✔️ Need to put the values in the global scope, or clone the 1st floor (I chose to clone the 1st floor, should be better for performance anyways)  
 
-## 🌵 Animating obstacles
+## Animating obstacles 🌵
 
 ### ⚠️ Obstacles do not all move at the same speed 
 
@@ -74,7 +74,7 @@
 ❌ Same reference problem (created one cube that was added as obstacle dummy => the same cube was added more than once to the same array, when removed it from the array to reuse it somewhere else, was "removed" aka teleported to the second place it was used in).  
 ✔️ Need to make sure to use the reference only once
 
-## 🏜️ Merging objects
+## Merging objects 🏜️
 
 ### ⚠️ Uncaught (in promise) TypeError: Cannot read property 'center' of undefined at Sphere.copy (three.module.js:4448) 
 
