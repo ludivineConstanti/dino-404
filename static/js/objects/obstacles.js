@@ -2,19 +2,21 @@ import * as THREE from "/js/three.js/three.module.js";
 
 import {
     scene,
-    redMat,
-    blueMat,
-    yellowMat,
-    greenMat,
-    whiteMat,
     multiMat,
     Colors,
     assignColor,
+    limitR,
+    limitL
 } from "/js/scene.js";
 
 import {
     BufferGeometryUtils
 } from "/js/three.js/BufferGeometryUtils.js";
+
+import {
+    dino,
+    dinoPosX
+} from "/js/objects/dino.js";
 
 let cactusArr = [];
 let sCactusArr = [];
@@ -22,10 +24,19 @@ let visibleObst = [];
 let visibleSObst = [];
 let invisibleObst = [];
 let invisibleSObst = [];
-const limitLeft = -400;
-const limitRight = -limitLeft;
 
-function modifyColor(modelArr1, color1, modelArr2, color2, pushInArray) {
+const colliderData = {
+    // small cactus
+    small: {xL: -15, y: 25, xR: 35},
+    // normal size
+    s1: {xL: -20, y: 35, xR: 40},
+    s1Two: {xL: -30, y: 45, xR: 45},
+    s1Four: {xL: -35, y: 55, xR: 50},
+    s1Six: {xL: -40, y: 65, xR: 50},
+    s1Eight: {xL: -40, y: 70, xR: 55},
+};
+
+function modifyColor(modelArr1, color1, modelArr2, color2, scale = 1, name = 's1') {
     const arr = [];
     for (let i = 0; i < modelArr1.length; i++) {
         const copy = modelArr1[i].clone();
@@ -47,22 +58,24 @@ function modifyColor(modelArr1, color1, modelArr2, color2, pushInArray) {
     // Merging cactus
     const mergedVersion = BufferGeometryUtils.mergeBufferGeometries(arr, false);
     const result = new THREE.Mesh(mergedVersion, multiMat);
-    if (pushInArray) {
-        cactusArr.push(result);
+    if (scale !== 1) {
+        result.scale.set(scale, scale, scale);
+        result.position.y += (scale - 1) * 50;
     }
+    result.name = name;
+    cactusArr.push(result);
     return result;
 }
 
-function makeSmallCopy(model) {
+function makeSmallCopy(model, scale) {
     const smallCopy = model.clone();
     smallCopy.name = "small";
-    smallCopy.applyMatrix4(new THREE.Matrix4().makeTranslation(0, -41, 0));
-    smallCopy.applyMatrix4(new THREE.Matrix4().makeScale(0.5, 0.5, 0.5));
+    smallCopy.applyMatrix4(new THREE.Matrix4().makeTranslation(0, -41 + (scale - 0.5) * 120, 0));
+    smallCopy.applyMatrix4(new THREE.Matrix4().makeScale(scale, scale, scale));
     sCactusArr.push(smallCopy);
 }
 
 function fillcactusArr() {
-
     // radius top, radius bottom, height, radial segments, height segments
     const cactusGeom = new THREE.CylinderBufferGeometry(10, 10, 30, 6, 2);
     modifyRowCylinder(cactusGeom.attributes.position, 7, 6);
@@ -77,8 +90,8 @@ function fillcactusArr() {
     cactus1Arr.push(cactus1Geom);
 
     // Adding a flower on top
-    const cactus1_F_Geom = new THREE.CylinderBufferGeometry(4, 5, 8, 6, 2);
-    modifyRowCylinder(cactus1_F_Geom.attributes.position, 4, 2);
+    const cactus1_F_Geom = cactusGeom.clone();
+    cactus1_F_Geom.applyMatrix4(new THREE.Matrix4().makeScale(0.5, 0.5, 0.5));
     cactus1_F_Geom.applyMatrix4(new THREE.Matrix4().makeTranslation(0, -11, 0));
     const cactus1_F_Color = assignColor(Colors.red, cactus1_F_Geom);
     cactus1_F_Geom.setAttribute("color", cactus1_F_Color);
@@ -87,113 +100,59 @@ function fillcactusArr() {
     // Merging cactus
     const cactus1Merged = BufferGeometryUtils.mergeBufferGeometries(cactus1Arr, false);
     const cactus1_C1 = new THREE.Mesh(cactus1Merged, multiMat);
+    cactus1_C1.name = 's1'
     cactusArr.push(cactus1_C1);
 
     // Other colors
-    const cactus1_C2 = modifyColor([cactus1Geom], 0, [cactus1_F_Geom], Colors.yellow, true);
-    const cactus1_C3 = modifyColor([cactus1Geom], Colors.yellow, [cactus1_F_Geom], Colors.red, true);
+    const cactus1_C2 = modifyColor([cactus1Geom], 0, [cactus1_F_Geom], Colors.yellow);
+    /*const cactus1_C3 = modifyColor([cactus1Geom], Colors.yellow, [cactus1_F_Geom], Colors.red);*/
 
     // Small copies
-    makeSmallCopy(cactus1_C1);
-    makeSmallCopy(cactus1_C2);
-    makeSmallCopy(cactus1_C3);
+    makeSmallCopy(cactus1_C1, 0.5);
+    makeSmallCopy(cactus1_C1, 0.6);
+    makeSmallCopy(cactus1_C1, 0.7);
+    makeSmallCopy(cactus1_C2, 0.5);
+    makeSmallCopy(cactus1_C2, 0.7);
+    /*makeSmallCopy(cactus1_C3, 0.5);*/
 
     // 2nd cactus *** 1st color ****************************************************
 
-    /*const cactus2Arr = [];
-    const cactus2_F_Arr = [];
+    // need an offset to have the cactus properly center 
+    // (so that it doesn't go more to the right or left when is rotated 180 degrees)
+    // useful for the collision system
+    const cactus2OffsetX = -3;
+    
+    const cactus2Arr = [];
     const cactus2Geom = cactusGeom.clone();
-    cactus2Geom.applyMatrix4(new THREE.Matrix4().makeScale(0.9, 0.7, 0.9));
-    cactus2Geom.applyMatrix4(new THREE.Matrix4().makeTranslation(0, -30, 0));
+    cactus2Geom.applyMatrix4(new THREE.Matrix4().makeScale(0.7, 0.9, 0.3));
+    cactus2Geom.applyMatrix4(new THREE.Matrix4().makeRotationZ(Math.PI / 8));
+    cactus2Geom.applyMatrix4(new THREE.Matrix4().makeTranslation(0 + cactus2OffsetX, -35, 0));
     cactus2Arr.push(cactus2Geom);
 
-    const cactus2_B_Geom = cactusGeom.clone();
-    cactus2_B_Geom.applyMatrix4(new THREE.Matrix4().makeScale(0.65, 0.6, 0.65));
-    cactus2_B_Geom.applyMatrix4(new THREE.Matrix4().makeTranslation(11, -15.5, 0));
-    cactus2_B_Geom.applyMatrix4(new THREE.Matrix4().makeRotationZ(-Math.PI / 5));
-    cactus2Arr.push(cactus2_B_Geom);
+    const cactus2_B1_Geom = cactusGeom.clone();
+    cactus2_B1_Geom.applyMatrix4(new THREE.Matrix4().makeScale(0.5, 0.7, 0.2));
+    cactus2_B1_Geom.applyMatrix4(new THREE.Matrix4().makeRotationZ(-Math.PI / 4));
+    cactus2_B1_Geom.applyMatrix4(new THREE.Matrix4().makeTranslation(8 + cactus2OffsetX, -21, 0));
+    cactus2Arr.push(cactus2_B1_Geom);
+
+    const cactus2_B2_Geom = cactusGeom.clone();
+    cactus2_B2_Geom.applyMatrix4(new THREE.Matrix4().makeScale(0.4, 0.5, 0.2));
+    cactus2_B2_Geom.applyMatrix4(new THREE.Matrix4().makeRotationZ(Math.PI / 4));
+    cactus2_B2_Geom.applyMatrix4(new THREE.Matrix4().makeTranslation(0 + cactus2OffsetX, -12, 0));
+    cactus2Arr.push(cactus2_B2_Geom);
 
     // Merging cactus
     const cactus2Merged = BufferGeometryUtils.mergeBufferGeometries(cactus2Arr, false);
     const cactus2_C1 = new THREE.Mesh(cactus2Merged, multiMat);
+    cactus2_C1.name = 's1'
 
-    const cactus2_F1_Geom = new THREE.DodecahedronBufferGeometry(5);
-    cactus2_F1_Geom.applyMatrix4(new THREE.Matrix4().makeTranslation(-11, -26, 9));
-    const cactus2_F1_Color = assignColor(Colors.red, cactus2_F1_Geom);
-    cactus2_F1_Geom.setAttribute("color", cactus2_F1_Color);
-    cactus2_F_Arr.push(cactus2_F1_Geom);
-
-    const cactus2_F2_Geom = cactus2_F1_Geom.clone();
-    cactus2_F2_Geom.applyMatrix4(new THREE.Matrix4().makeScale(0.5, 0.5, 0.5));
-    cactus2_F2_Geom.applyMatrix4(new THREE.Matrix4().makeTranslation(15, -7, 3));
-    cactus2_F_Arr.push(cactus2_F2_Geom);
-
-    const cactus2_F3_Geom = cactus2_F1_Geom.clone();
-    cactus2_F3_Geom.applyMatrix4(new THREE.Matrix4().makeScale(0.7, 0.7, 0.7));
-    cactus2_F3_Geom.applyMatrix4(new THREE.Matrix4().makeTranslation(4, 4, -13));
-    cactus2_F_Arr.push(cactus2_F3_Geom);
-
-    // Merging flowers
-    const cactus2_F_Merged = BufferGeometryUtils.mergeBufferGeometries(cactus2_F_Arr, false);
-    const cactus2_F_C1 = new THREE.Mesh(cactus2_F_Merged, multiMat);
-
-    // The geometry shape of the flower is incompatible, with the one of the cactus
-    // they need to be added separately
-    cactus2_C1.add(cactus2_F_C1);
     cactusArr.push(cactus2_C1);
 
     // Other colors
-    const cactus2_C2 = modifyColor([cactus2Geom, cactus2_B_Geom], Colors.yellow, [], 0, false);
-    cactus2_C2.add(cactus2_F_C1.clone());
-    cactusArr.push(cactus2_C2);
-
-    // Small copies
-    makeSmallCopy(cactus2_C1);
-    makeSmallCopy(cactus2_C2);*/
-
-    // 3rd cactus *****************************************************
-
-    const cactus3Arr = [];
-    const cactus3Geom = cactusGeom.clone();
-    cactus3Geom.applyMatrix4(new THREE.Matrix4().makeScale(0.7, 0.9, 0.3));
-    cactus3Geom.applyMatrix4(new THREE.Matrix4().makeRotationZ(Math.PI / 8));
-    cactus3Geom.applyMatrix4(new THREE.Matrix4().makeTranslation(0, -35, 0));
-    cactus3Arr.push(cactus3Geom);
-
-    const cactus3_B1_Geom = cactusGeom.clone();
-    cactus3_B1_Geom.applyMatrix4(new THREE.Matrix4().makeScale(0.5, 0.7, 0.2));
-    cactus3_B1_Geom.applyMatrix4(new THREE.Matrix4().makeRotationZ(-Math.PI / 4));
-    cactus3_B1_Geom.applyMatrix4(new THREE.Matrix4().makeTranslation(8, -21, 0));
-    cactus3Arr.push(cactus3_B1_Geom);
-
-    const cactus3_B2_Geom = cactusGeom.clone();
-    cactus3_B2_Geom.applyMatrix4(new THREE.Matrix4().makeScale(0.4, 0.5, 0.2));
-    cactus3_B2_Geom.applyMatrix4(new THREE.Matrix4().makeRotationZ(Math.PI / 4));
-    cactus3_B2_Geom.applyMatrix4(new THREE.Matrix4().makeTranslation(0, -12, 0));
-    cactus3Arr.push(cactus3_B2_Geom);
-
-    // Merging cactus
-    const cactus3Merged = BufferGeometryUtils.mergeBufferGeometries(cactus3Arr, false);
-    const cactus3_C1 = new THREE.Mesh(cactus3Merged, multiMat);
-
-    cactusArr.push(cactus3_C1);
-
-    // Other colors
-    const cactus3_C2 = modifyColor([cactus3Geom, cactus3_B1_Geom, cactus3_B2_Geom], Colors.yellow, [], 0, true);
-    const cactus3_C3 = modifyColor([cactus3Geom, cactus3_B1_Geom, cactus3_B2_Geom], Colors.red, [], 0, true);
-    const cactus3_C4 = modifyColor([cactus3Geom, cactus3_B1_Geom, cactus3_B2_Geom], Colors.green, [], 0, true);
-
-    // Small copies
-    makeSmallCopy(cactus3_C1);
-    makeSmallCopy(cactus3_C2);
-    makeSmallCopy(cactus3_C3);
-    makeSmallCopy(cactus3_C4);
-
-    /*cactus.traverse(e => {
-          e.castShadow = true;
-          e.receiveShadow = true;
-      });*/
-
+    modifyColor([cactus2Geom, cactus2_B1_Geom, cactus2_B2_Geom], 0, [], 0, 1.6, 's1Six');
+    modifyColor([cactus2Geom, cactus2_B1_Geom, cactus2_B2_Geom], Colors.yellow, [], 0, 1.8, 's1Eight');
+    modifyColor([cactus2Geom, cactus2_B1_Geom, cactus2_B2_Geom], Colors.red, [], 0, 1.2, 's1Two');
+    modifyColor([cactus2Geom, cactus2_B1_Geom, cactus2_B2_Geom], Colors.green, [], 0, 1.4, 's1Four');
 }
 
 function getObstacle(firstArr, recycledArr, animatedArr, posX) {
@@ -204,8 +163,10 @@ function getObstacle(firstArr, recycledArr, animatedArr, posX) {
     recycledArr.sort(() => Math.random() - 0.5);
     let cactus;
     if (firstArr.length) {
+        // console.log("big cactus");
         cactus = firstArr.pop();
     } else {
+        // console.log("small");
         cactus = recycledArr.pop();
     }
 
@@ -217,27 +178,43 @@ function getObstacle(firstArr, recycledArr, animatedArr, posX) {
 }
 
 function putObstacleInScene() {
-    getObstacle(cactusArr, invisibleObst, visibleObst, limitRight);
+    getObstacle(cactusArr, invisibleObst, visibleObst, limitR);
+
     let sCactusFront = Math.random();
     if (sCactusFront < 0.25) {
-        getObstacle(sCactusArr, invisibleSObst, visibleSObst, limitRight - 25);
+        getObstacle(sCactusArr, invisibleSObst, visibleSObst, limitR - 30);
     }
     let sCactusBack = Math.random();
     if (sCactusBack < 0.25) {
-        getObstacle(sCactusArr, invisibleSObst, visibleSObst, limitRight + 25);
+        getObstacle(sCactusArr, invisibleSObst, visibleSObst, limitR + 30);
     }
 }
 
-function updateObstacles() {
-    animateObstacles(visibleSObst, invisibleSObst);
-    animateObstacles(visibleObst, invisibleObst);
+function updateObstacles(speed) {
+    animateObstacles(visibleSObst, invisibleSObst, speed);
+    animateObstacles(visibleObst, invisibleObst, speed);
 }
 
-function animateObstacles(animatedArr, recycledArr) {
+function animateObstacles(animatedArr, recycledArr, speed) {
     for (let i = 0; i < animatedArr.length; i++) {
+
         const cactus = animatedArr[i];
-        cactus.position.x = cactus.position.x - 5;
-        if (cactus.position.x < limitLeft) {
+        const cactusX = cactus.position.clone().x;
+        const dinoX = dino.mesh.position.clone().x;
+        const dinoY = dino.mesh.position.clone().y;
+
+        // the lower the number, the less "collision surface" there is for each cactus
+        const tolerance = 0.7;
+
+        cactus.position.x = cactus.position.x - speed;
+        //console.log(cactus.name, cactus.position.x, dino.mesh.position.x, dino.mesh.position.y);
+        if(cactusX > colliderData[cactus.name].xL * tolerance + dinoX 
+            && cactusX < colliderData[cactus.name].xR * tolerance + dinoX
+            && dinoY < colliderData[cactus.name].y * tolerance) {
+            console.log('**************TOUCHING**************');
+        }
+
+        if (cactus.position.x < limitL) {
             scene.remove(cactus);
             // recycle the particle
             recycledArr.push(animatedArr.splice(i, 1)[0]);

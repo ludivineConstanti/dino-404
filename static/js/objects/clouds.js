@@ -2,10 +2,11 @@ import * as THREE from "/js/three.js/three.module.js";
 
 import {
     scene,
-    whiteMat,
     multiMat,
     Colors,
-    assignColor
+    assignColor,
+    limitR,
+    limitL
 } from "/js/scene.js";
 
 import {
@@ -14,8 +15,6 @@ import {
 
 let visibleClouds = [];
 let invisibleClouds = [];
-const limitCloudLeft = -500;
-const limitCloudRight = -limitCloudLeft;
 let cloud;
 
 function createCloud() {
@@ -49,7 +48,7 @@ function getCloud() {
 function putCloudInSky(posX) {
     const cloud = getCloud();
     cloud.position.y = 20 + Math.random() * 100;
-    cloud.position.x = posX || limitCloudRight;
+    cloud.position.x = posX || limitR;
 
     // for a better result, we position the clouds
     // at random depths inside of the scene
@@ -71,18 +70,18 @@ function fillSky() {
         // - a => limit of x to the left
         // + a => reset to 0
         // + a => same limit as the left one, but to the right
-        const posX = limitCloudLeft + Math.random() * (limitCloudRight * 2);
+        const posX = limitL + Math.random() * (limitR * 2);
         putCloudInSky(posX);
     }
 }
 
-function updateCloud() {
+function updateCloud(speed) {
     for (let i = 0; i < visibleClouds.length; i++) {
         const cloud = visibleClouds[i];
         const z = cloud.position.z;
-        cloud.position.x -= 0.5;
+        cloud.position.x -= speed;
         // check if the particle is out of the field of view
-        if (cloud.position.x < limitCloudLeft) {
+        if (cloud.position.x < limitL) {
             scene.remove(cloud);
             // recycle the particle
             invisibleClouds.push(visibleClouds.splice(i, 1)[0]);

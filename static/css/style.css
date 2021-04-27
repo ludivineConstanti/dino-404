@@ -1,3 +1,8 @@
 #world {
     background-color: #F0F0F0;
 }
+
+canvas {
+    width: 100vw;
+    height: 100vh;
+}

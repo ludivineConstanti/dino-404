@@ -41,8 +41,12 @@ import {
 
 let dinoSpeed = 0;
 let obstacleTimeTracker = 0;
+let obstacleSpacing = Math.floor(Math.random() * 60);
 let isJumping = false;
 let isLanding = false;
+let gameSpeed = 5;
+let boost = 0;
+let score = 0;
 
 // Basic set up for the scene is based on the tutorial from Karim Maaloul
 // https://tympanus.net/codrops/2016/04/26/the-aviator-animating-basic-3d-scene-threejs/
@@ -81,11 +85,12 @@ function loop() {
   //console.log(dino.mesh.position.y);
   // controls.update();
 
-  updateCloud();
-  updateFloor();
-  updateObstacles();
+  updateCloud(gameSpeed / 10);
+  updateFloor(gameSpeed + boost);
+  updateObstacles(gameSpeed + boost);
 
   dinoSpeed += 0.3;
+  gameSpeed += 0.001;
 
   if (landed) {
     isLanding = false;
@@ -94,16 +99,24 @@ function loop() {
   // on the dino instance
   if (!isJumping && !isLanding) {
     dino.run();
+    boost = 0;
   }
   // can only jump after landing
   // (otherwise, could just press the up key all the time,
   // to avoid all obstacles)
   if (isJumping && !isLanding) {
     dino.jump();
+    // I don't like it when the landscape goes too fast (motion sickness)
+    // but higher speed helps with the jump 
+    // (otherwise, the jump needs to last very long to get past the obstacles)
+    // so I put a boost speed during the jump
+    if (boost < 2) {
+      boost += 0.15;
+    }
   }
   // The jump needs to be fast, otherwise,
   // it doesn't seem very reactive to the player's action
-  if (jumpDuration > 12 && !landed) {
+  if (jumpDuration > 15 && !landed) {
     isJumping = false;
     isLanding = true;
     dino.land();
@@ -116,12 +129,18 @@ function loop() {
 
   obstacleTimeTracker++;
 
-  if (obstacleTimeTracker % 100 == 0) {
+  if (obstacleTimeTracker == 90 - obstacleSpacing) {
     putObstacleInScene();
+    obstacleTimeTracker = 0;
+    obstacleSpacing = Math.floor(Math.random() * 60);
   }
 
-  console.log(renderer.info.render.calls);
-  console.log(renderer.info.render);
+  score++;
+
+  //console.log(renderer.info.render.calls);
+  //console.log(renderer.info.render);
+  //console.log(score);
+  //console.log(boost);
 
   // render the scene
   renderer.render(scene, camera);

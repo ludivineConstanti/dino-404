@@ -81,3 +81,5 @@ renderer.info.render gives an object with more infos
 It's possible to check the framerate by opening the devtools and turning on the browser's frame meter (need to click on the three dots that indicate the sub-menu, on the bottom left, and then go to rendering).
 
 ## LOD (Level Of Details)
+
+This allows us to show more or less geometry based on distance from the camera. So, just as the name say, change the level of detail, since it can be a bad idea to use high-poly mesh for something very small (far away) on the screen. Since I'm working with low-poly already, I can't optimise this further.

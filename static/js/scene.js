@@ -11,7 +11,10 @@ let scene,
     renderer,
     container;
 
-let shadowLight;
+let directionalLight;
+
+const limitR = 500;
+const limitL = -limitR;
 
 const createScene = function () {
     // Get the width and the height of the screen,
@@ -60,23 +63,15 @@ const createScene = function () {
     renderer.gammaFactor = 2.2;
     renderer.outputEncoding = THREE.sRGBEncoding;
 
-    // Make the lights accurate
-    // Default is false for backward compatibility
-    // Useful mainly when we want to re-use real life light settings
-    // Can potentially be a problem if there's no environment
-    // (real life gets a lot of reflected light from environments, not only light sources)
-    // => Need indirect lighting
-    // Ambient light is three.js solution to fake indirect lighting (too much calculations, otherwise)
-    // Need to adjust the lights to use it (currently is too dark)
-    // ref: https://discoverthreejs.com/book/first-steps/physically-based-rendering/
-    // renderer.physicallyCorrectLights = true;
-
     // Define the size of the renderer; in this case,
     // it will fill the entire screen
     renderer.setSize(WIDTH, HEIGHT);
 
     // Enable shadow rendering
-    renderer.shadowMap.enabled = true;
+    // I decided to prioritize performance over shadows
+    // and since I'm struggling to get a good frame rate
+    // => goodby shadows
+    // renderer.shadowMap.enabled = true;
 
     // Add the DOM element of the renderer to the
     // container we created in the HTML
@@ -103,34 +98,17 @@ const createLights = function () {
     // A directional light shines from a specific direction.
     // It acts like the sun, that means that all the rays produced are parallel.
     // Directional lights (like all direct lights) are slow, should not use too many
-    shadowLight = new THREE.DirectionalLight(0xffffff, 0.9);
+    directionalLight = new THREE.DirectionalLight(0xffffff, 0.9);
 
     // Set the direction of the light;
-    shadowLight.position.set(-150, 100, 250);
-
-    // Allow shadow casting
-    // Shadows are expensive, therefore, there's no need to allow it for every light
-    shadowLight.castShadow = true;
-
-    // define the visible area of the projected shadow
-    shadowLight.shadow.camera.left = -400;
-    shadowLight.shadow.camera.right = 400;
-    shadowLight.shadow.camera.top = 200;
-    shadowLight.shadow.camera.bottom = -400;
-    shadowLight.shadow.camera.near = 150;
-    shadowLight.shadow.camera.far = 300;
-
-    // define the resolution of the shadow; the higher the better,
-    // but also the more expensive and less performant
-    shadowLight.shadow.mapSize.width = 1024;
-    shadowLight.shadow.mapSize.height = 1024;
+    directionalLight.position.set(-150, 100, 250);
 
     // put light everywhere
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
     scene.add(ambientLight);
 
     // to activate the lights, just add them to the scene
-    scene.add(shadowLight);
+    scene.add(directionalLight);
 }
 
 // MATERIALS ************************************************************************
@@ -156,34 +134,12 @@ const redMat = new THREE.MeshPhongMaterial({
     shading: THREE.FlatShading,
 });
 
-const blueMat = new THREE.MeshPhongMaterial({
-    color: Colors.blue,
-    shininess: 50,
-    // transparency => goog to see how cubes are intersecting
-    /*transparent: true,
-    opacity: .6,*/
-    shading: THREE.FlatShading,
-});
-
-const greenMat = new THREE.MeshPhongMaterial({
-    color: Colors.green,
-    emissive: Colors.green,
-    emissiveIntensity: 0.1,
-    shininess: 100,
-    shading: THREE.FlatShading,
-});
-
-const yellowMat = new THREE.MeshPhongMaterial({
-    color: Colors.yellow,
-    emissive: Colors.yellow,
-    emissiveIntensity: 0.2,
-    shininess: 50,
-    shading: THREE.FlatShading,
-});
-
 const whiteMat = new THREE.MeshPhongMaterial({
     color: Colors.white,
+    // change from default shininess 30
     shininess: 50,
+    /*transparent: true,
+    opacity: .5,*/
     shading: THREE.FlatShading,
 });
 
@@ -231,12 +187,11 @@ export {
     camera,
     renderer,
     redMat,
-    blueMat,
-    greenMat,
-    yellowMat,
     whiteMat,
     whiteMatFloor,
     multiMat,
     Colors,
-    assignColor
+    assignColor,
+    limitR,
+    limitL
 };

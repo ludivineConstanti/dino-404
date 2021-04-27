@@ -12,6 +12,7 @@ import {
 
 // makes dino available to global scope
 let dino;
+const dinoPosX = -120;
 
 let jumpDuration = 0;
 let landed = false;
@@ -302,18 +303,13 @@ function Dino() {
     // Y => negative values to the bottom, positive values to the top
     this.mouth.position.set(mouthX, mouthY, 0);
     this.head.add(this.mouth);
-
-    this.mesh.traverse(e => {
-        e.castShadow = true;
-        e.receiveShadow = true;
-    });
 }
 
 const createDino = function () {
     // name of the instance = new instance of the function
     // the variable of the instance needs to be declared somewhere in the global scope
     dino = new Dino();
-    dino.mesh.position.x = -120;
+    dino.mesh.position.x = dinoPosX;
     // Need to put name of the object (or of the "container") we want to render
     scene.add(dino.mesh);
 }
@@ -361,7 +357,7 @@ Dino.prototype.run = function () {
 
 Dino.prototype.jump = function () {
     landed = false;
-    if (this.mesh.position.y < 60) {
+    if (this.mesh.position.y < 80) {
         this.mesh.position.y += 12;
     }
     this.body.rotation.z = -Math.PI / 10;
@@ -402,5 +398,6 @@ export {
     createDino,
     dino,
     jumpDuration,
-    landed
+    landed,
+    dinoPosX
 };
