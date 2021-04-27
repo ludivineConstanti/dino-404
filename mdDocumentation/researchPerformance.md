@@ -1,4 +1,4 @@
-# Performance
+# Performance 💪
 
 The performance is important for the animation, otherwise, the frame rate drops a lot.
 Easiest thing to do, is to reduce the size of the 3D scene (so that it takes less pixels on the screen) => can make reference to the original game, which is not full screen.
@@ -14,12 +14,12 @@ Performance is based on:
 
 [Ref =>](https://codeburst.io/improve-your-threejs-performances-with-buffergeometryutils-8f97c072c14b)
 
-## Geometry
+## Geometry 💠
 
 1. Creating new objects is expensive, should avoid it, cloning or recycling them is better.
 2. Using BufferGeometry is cheaper than using Geometry.
 
-### Merging geometry
+### Merging geometry 🏜️
 
 It's better to merge the geometry when possible. Instead of creating them one by one, push the geometry in an array and then use:  
 const mergedGeometry = BufferGeometryUtils.mergeBufferGeometries(nameOfTheArray, false);  
@@ -38,13 +38,13 @@ Note => merging geometry with BufferGeometryUtils only works on buffer geometry.
 
 ### => OBSERVATIONS (for the stones and the cactus that are added to the floor)
 
-#### Performance with cloning objects
+#### Performance with cloning objects 🌵 🌵 🌵 ☁️ ☁️ ☁️
 
 FPS (full screen) => between 3.4 and 5.8  
 calls => between 98 and 140  
 triangles => between 1950 and 2600
 
-#### Performance with merging objects
+#### Performance with merging objects 🏜️ 🦖
 
 FPS (full screen) => between 3.8 and 5.9  
 calls => between 42 and 60  
@@ -60,12 +60,12 @@ FPS (full screen) => between 3.9 and 6.7
 calls => between 30 and 37  
 triangles => between 2300 and 2700
 
-## Shadows
+## Shadows ☀️
 
 1. Shadows are expensive, should eliminate all that are unnecessary.
 2. The shadow map size (where the lights are created) should be as small as possible (and need to use the values 256, or 512, or 1024...).
 
-## Camera
+## Camera 🎥
 
 The more things are visible on the camera, the less performant it is
 => should make sure to use the minimum value for the far plane and maximum value for the near plane
