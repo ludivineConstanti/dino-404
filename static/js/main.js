@@ -137,8 +137,7 @@ function loop() {
 
   score++;
 
-  //console.log(renderer.info.render.calls);
-  //console.log(renderer.info.render);
+  console.log(renderer.info.render);
   //console.log(score);
   //console.log(boost);
 
